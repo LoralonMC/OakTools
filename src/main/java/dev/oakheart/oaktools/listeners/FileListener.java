@@ -104,6 +104,16 @@ public class FileListener implements Listener {
             return;
         }
 
+        // Skip specific problematic block types that shouldn't be editable
+        // Don't cancel - just return to allow vanilla behavior (opening doors, flipping levers, etc.)
+        if (isBlockTypeExcluded(block)) {
+            if (isDebugEnabled()) {
+                plugin.getLogger().info("[File Debug] Skipped: Block type " + block.getType() + " is excluded from File tool, allowing vanilla interaction");
+            }
+            // DON'T cancel - allow player to interact normally with doors, levers, crafting tables, etc.
+            return;
+        }
+
         FileConfiguration config = plugin.getConfigManager().getConfig();
 
         // Get interaction point for precise cursor-based detection
@@ -298,6 +308,94 @@ public class FileListener implements Listener {
             case ADVENTURE -> config.getBoolean("general.restrictions.gamemode.adventure.allow_use", false);
             case SPECTATOR -> config.getBoolean("general.restrictions.gamemode.spectator.allow_use", false);
             default -> true;
+        };
+    }
+
+    /**
+     * Check if a block type should be excluded from File tool editing.
+     * Excludes attachable blocks, multi-block structures, and special blocks.
+     *
+     * @param block the block to check
+     * @return true if the block should be excluded
+     */
+    private boolean isBlockTypeExcluded(Block block) {
+        String materialName = block.getType().name();
+
+        // Exclude all torch types (wall torches, soul torches, redstone torches, etc.)
+        if (materialName.contains("TORCH")) {
+            return true;
+        }
+
+        // Exclude all door types (including trap doors)
+        if (materialName.contains("DOOR")) {
+            return true;
+        }
+
+        // Exclude all vine types
+        if (materialName.contains("VINE")) {
+            return true;
+        }
+
+        // Exclude mushroom blocks (can cause issues with block states)
+        if (materialName.contains("MUSHROOM_BLOCK")) {
+            return true;
+        }
+
+        // Exclude portals
+        if (materialName.contains("PORTAL")) {
+            return true;
+        }
+
+        // Exclude specific problematic blocks
+        return switch (block.getType()) {
+            case LEVER,
+                 TRIPWIRE_HOOK,
+                 END_PORTAL_FRAME,
+                 LADDER,
+                 // Exclude interactive blocks with GUIs
+                 CRAFTING_TABLE,
+                 LOOM, GRINDSTONE, STONECUTTER,
+                 CARTOGRAPHY_TABLE, SMITHING_TABLE,
+                 ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
+                 ENCHANTING_TABLE,
+                 // Exclude buttons (all types)
+                 OAK_BUTTON, SPRUCE_BUTTON, BIRCH_BUTTON, JUNGLE_BUTTON,
+                 ACACIA_BUTTON, DARK_OAK_BUTTON, MANGROVE_BUTTON, CHERRY_BUTTON,
+                 BAMBOO_BUTTON, CRIMSON_BUTTON, WARPED_BUTTON,
+                 STONE_BUTTON, POLISHED_BLACKSTONE_BUTTON,
+                 // Exclude pressure plates (all types)
+                 OAK_PRESSURE_PLATE, SPRUCE_PRESSURE_PLATE, BIRCH_PRESSURE_PLATE,
+                 JUNGLE_PRESSURE_PLATE, ACACIA_PRESSURE_PLATE, DARK_OAK_PRESSURE_PLATE,
+                 MANGROVE_PRESSURE_PLATE, CHERRY_PRESSURE_PLATE, BAMBOO_PRESSURE_PLATE,
+                 CRIMSON_PRESSURE_PLATE, WARPED_PRESSURE_PLATE,
+                 STONE_PRESSURE_PLATE, POLISHED_BLACKSTONE_PRESSURE_PLATE,
+                 HEAVY_WEIGHTED_PRESSURE_PLATE, LIGHT_WEIGHTED_PRESSURE_PLATE,
+                 // Exclude beds (multi-block structures)
+                 WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
+                 LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
+                 PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED,
+                 // Exclude special/unique blocks
+                 DRAGON_EGG,
+                 BELL,
+                 RESPAWN_ANCHOR,
+                 // Exclude eggs and spawn blocks
+                 TURTLE_EGG, SNIFFER_EGG, FROGSPAWN,
+                 // Exclude cauldrons (water/lava/powder snow levels)
+                 CAULDRON, WATER_CAULDRON, LAVA_CAULDRON, POWDER_SNOW_CAULDRON,
+                 // Exclude cake variants (bite level/candles)
+                 CAKE,
+                 CANDLE_CAKE, WHITE_CANDLE_CAKE, ORANGE_CANDLE_CAKE, MAGENTA_CANDLE_CAKE,
+                 LIGHT_BLUE_CANDLE_CAKE, YELLOW_CANDLE_CAKE, LIME_CANDLE_CAKE,
+                 PINK_CANDLE_CAKE, GRAY_CANDLE_CAKE, LIGHT_GRAY_CANDLE_CAKE,
+                 CYAN_CANDLE_CAKE, PURPLE_CANDLE_CAKE, BLUE_CANDLE_CAKE,
+                 BROWN_CANDLE_CAKE, GREEN_CANDLE_CAKE, RED_CANDLE_CAKE, BLACK_CANDLE_CAKE,
+                 // Exclude composter (fill level)
+                 COMPOSTER,
+                 // Exclude other attachable/special blocks
+                 TRIPWIRE, END_PORTAL, NETHER_PORTAL,
+                 REPEATER, COMPARATOR,
+                 RAIL, POWERED_RAIL, DETECTOR_RAIL, ACTIVATOR_RAIL -> true;
+            default -> false;
         };
     }
 }
