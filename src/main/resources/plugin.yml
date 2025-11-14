@@ -1,0 +1,64 @@
+name: OakTools
+version: '1.0.0'
+main: dev.oakheart.oaktools.OakTools
+api-version: '1.21'
+authors: [ Loralon ]
+description: Player-friendly building utilities for survival
+
+softdepend:
+  - ItemsAdder
+  - Nexo
+  - CoreProtect
+
+commands:
+  oaktools:
+    description: OakTools main command
+    usage: /oaktools <give|reload|info|repair> [args]
+    aliases: [otools, ot]
+    permission: oaktools.admin
+
+permissions:
+  oaktools.admin:
+    description: Access to all OakTools admin commands
+    default: op
+    children:
+      oaktools.give: true
+      oaktools.reload: true
+      oaktools.info: true
+      oaktools.repair: true
+
+  oaktools.use.file:
+    description: Can use File tool
+    default: true
+
+  oaktools.use.trowel:
+    description: Can use Trowel tool
+    default: true
+
+  oaktools.craft.file:
+    description: Can craft File tool
+    default: true
+
+  oaktools.craft.trowel:
+    description: Can craft Trowel tool
+    default: true
+
+  oaktools.give:
+    description: Can use /oaktools give command
+    default: op
+
+  oaktools.reload:
+    description: Can reload configuration
+    default: op
+
+  oaktools.info:
+    description: Can view tool information
+    default: op
+
+  oaktools.repair:
+    description: Can repair tools via command
+    default: op
+
+  oaktools.bypass.protection:
+    description: Can use tools in protected regions
+    default: false

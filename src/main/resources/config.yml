@@ -1,0 +1,254 @@
+# OakTools Configuration
+# Missing config options are automatically added on plugin load
+
+# ============================================================================
+# General Settings
+# ============================================================================
+general:
+  debug: false  # Enable detailed debug logs (for troubleshooting)
+
+  restrictions:
+    # World restrictions
+    worlds:
+      mode: WHITELIST  # WHITELIST or BLACKLIST
+      list:
+        - world
+        - creative
+
+    # Gamemode-specific behavior
+    gamemode:
+      creative:
+        allow_use: true
+        consume_blocks: false
+        consume_durability: true
+      adventure:
+        allow_use: false
+        consume_blocks: true
+        consume_durability: true
+      spectator:
+        allow_use: false
+
+# ============================================================================
+# Tools
+# ============================================================================
+tools:
+  file:
+    enabled: true
+
+    # Display settings (MiniMessage format)
+    display:
+      enabled: true              # Enable lore updates for this tool
+      name: "<white>File</white>"
+      lore: []
+
+    # Item settings
+    base_material: WARPED_FUNGUS_ON_A_STICK  # CARROT_ON_A_STICK, WARPED_FUNGUS_ON_A_STICK, etc.
+    # Model settings:
+    #   Integer (e.g., 1001) → Vanilla CustomModelData
+    #   "nexo:file" → Nexo provider
+    #   "itemsadder:file" → ItemsAdder provider
+    model_id: "nexo:file"
+
+    # Durability settings
+    durability:
+      max: 250
+      use_vanilla_damage_bar: true
+      repair_material: IRON_INGOT
+      repair_amount: 63  # 25% of max durability (vanilla behavior)
+
+    # Allowed enchantments
+    allowed_enchantments:
+      - UNBREAKING
+      - MENDING
+
+    # Crafting recipe
+    recipe:
+      enabled: true
+      category: EQUIPMENT  # MISC, EQUIPMENT, BUILDING, REDSTONE, or DECORATIONS
+      shape:
+        - "  I"
+        - " I "
+        - "S  "
+      ingredients:
+        I: IRON_INGOT
+        S: STICK
+
+    # Tool features
+    features:
+      multiple_facing: true  # Fences, glass panes, iron bars
+      walls: true            # Wall connections and up state
+      stairs: true           # Stairs shape (right-click) and half (sneak+right-click)
+      directional: true      # Directional blocks (observers, pistons, end rods, etc.)
+      axis_rotation: true    # Logs, pillars, bone blocks
+      slabs: true            # Toggle top/bottom
+      # Note: File tool does not work on tile entities (chests, signs, spawners, etc.)
+
+  trowel:
+    enabled: true
+
+    # Display settings (MiniMessage format)
+    display:
+      enabled: true              # Enable lore updates for this tool
+      name: "<white>Trowel</white>"
+      lore:
+        - "<gray>Feed Source:</gray> <white>%feed_source%</white>"
+
+    # Item settings
+    base_material: WARPED_FUNGUS_ON_A_STICK  # CARROT_ON_A_STICK, WARPED_FUNGUS_ON_A_STICK, etc.
+    # Model settings:
+    #   Integer (e.g., 1002) → Vanilla CustomModelData
+    #   "nexo:trowel" → Nexo provider
+    #   "itemsadder:trowel" → ItemsAdder provider
+    model_id: "nexo:trowel"
+
+    # Durability settings
+    durability:
+      max: 250
+      use_vanilla_damage_bar: true
+      repair_material: IRON_INGOT
+      repair_amount: 63  # 25% of max durability (vanilla behavior)
+
+    # Allowed enchantments
+    allowed_enchantments:
+      - UNBREAKING
+      - MENDING
+
+    # Crafting recipe
+    recipe:
+      enabled: true
+      category: EQUIPMENT  # MISC, EQUIPMENT, BUILDING, REDSTONE, or DECORATIONS
+      shape:
+        - "  I"
+        - " II"
+        - "S  "
+      ingredients:
+        I: IRON_INGOT
+        S: STICK
+
+    # Blocks that can be replaced when placing with Trowel
+    # Note: AIR, WATER, LAVA are automatically replaceable
+    can_replace:
+      - SHORT_GRASS
+      - TALL_GRASS
+      - FERN
+      - LARGE_FERN
+      - SNOW
+      - DEAD_BUSH
+      - SEAGRASS
+      - TALL_SEAGRASS
+      - KELP
+      - KELP_PLANT
+      - DANDELION
+      - POPPY
+      - BLUE_ORCHID
+      - ALLIUM
+      - AZURE_BLUET
+      - RED_TULIP
+      - ORANGE_TULIP
+      - WHITE_TULIP
+      - PINK_TULIP
+      - OXEYE_DAISY
+      - CORNFLOWER
+      - LILY_OF_THE_VALLEY
+      - SUNFLOWER
+      - LILAC
+      - ROSE_BUSH
+      - PEONY
+
+    # Sounds (uses Adventure sound format: "ui.button.click" or "minecraft:ui.button.click")
+    sounds:
+      feed_source_switch: ui.button.click
+
+# ============================================================================
+# Integration Settings
+# ============================================================================
+# Protection bypass permission (hardcoded): oaktools.bypass.protection
+integration:
+  coreprotect:
+    enabled: true
+    log_file_changes: true
+    log_trowel_placements: true
+
+# ============================================================================
+# Messages (delivery: actionbar, chat, title)
+# ============================================================================
+messages:
+  # Feed source display names (shown in messages and lore)
+  feed_sources:
+    hotbar: "Hotbar"
+    row_1: "Row 1"
+    row_2: "Row 2"
+    row_3: "Row 3"
+
+  # Tool usage messages
+  protection_denied:
+    enabled: true
+    delivery:
+      - actionbar
+    content: "<red>You cannot build here</red>"
+
+  no_placeable_blocks:
+    enabled: true
+    delivery:
+      - actionbar
+    content: "<yellow>No placeable blocks in %feed_source%</yellow>"
+
+  feed_source_changed:
+    enabled: true
+    delivery:
+      - actionbar
+    content: "<gray>Feed source:</gray> <white>%feed_source%</white>"
+
+  no_permission:
+    enabled: true
+    delivery:
+      - actionbar
+    content: "<red>You don't have permission to use this tool</red>"
+
+  # Command messages (always delivered via chat)
+  commands:
+    no_permission: "<red>You don't have permission to use this command.</red>"
+    unknown_subcommand: "<red>Unknown subcommand. Use /oaktools help for usage.</red>"
+
+    help:
+      header: "<gold><bold>=== OakTools Commands ===</bold></gold>"
+      give: "<yellow>/oaktools give <player> <tool> [durability]</yellow>"
+      reload: "<yellow>/oaktools reload</yellow>"
+      info: "<yellow>/oaktools info [player]</yellow>"
+      repair: "<yellow>/oaktools repair [player]</yellow>"
+
+    give:
+      usage: "<red>Usage: /oaktools give <player> <tool> [durability]</red>"
+      player_not_found: "<red>Player not found: %player%</red>"
+      invalid_tool: "<red>Invalid tool type. Valid types: file, trowel</red>"
+      invalid_durability: "<red>Invalid durability value: %value%</red>"
+      success_sender: "<green>Gave %tool% to %player%</green>"
+      success_target: "<green>You received a %tool%!</green>"
+
+    info:
+      player_not_found: "<red>Player not found: %player%</red>"
+      must_specify_player: "<red>You must specify a player when using this command from console.</red>"
+      not_holding_tool: "<red>%player% is not holding an OakTools tool.</red>"
+      header: "<gold><bold>=== Tool Info ===</bold></gold>"
+      player: "<yellow>Player:</yellow> <white>%player%</white>"
+      tool_type: "<yellow>Tool Type:</yellow> <white>%tool%</white>"
+      durability: "<yellow>Durability:</yellow> <white>%remaining% / %max%</white>"
+      feed_source: "<yellow>Feed Source:</yellow> <white>%feed_source%</white>"
+
+    repair:
+      player_not_found: "<red>Player not found: %player%</red>"
+      must_specify_player: "<red>You must specify a player when using this command from console.</red>"
+      not_holding_tool: "<red>%player% is not holding an OakTools tool.</red>"
+      success_sender: "<green>Repaired %player%'s tool to full durability.</green>"
+      success_target: "<green>Your tool has been repaired!</green>"
+
+    reload:
+      reloading: "<yellow>Reloading OakTools configuration...</yellow>"
+      failed: "<red>Failed to reload configuration. Check console for errors.</red>"
+      success: "<green>Configuration and recipes reloaded successfully!</green>"
+
+# ============================================================================
+# Metrics (bStats)
+# ============================================================================
+metrics:
+  enabled: true
