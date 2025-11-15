@@ -38,20 +38,40 @@ public class FileListener implements Listener {
         return plugin.getConfigManager().getConfig().getBoolean("general.debug", false);
     }
 
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onFileUse(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
         EquipmentSlot hand = event.getHand();
 
-        // Validate tool first
+        // Validate tool FIRST
         if (item == null || !plugin.getItemFactory().isTool(item)) {
-            return;
+            return; // Not our tool, don't interfere at all
         }
 
         ToolType toolType = plugin.getItemFactory().getToolType(item);
         if (toolType != ToolType.FILE) {
-            return;
+            return; // Not the File tool
+        }
+
+        // Now that we know it's our tool, check if clicking a block that should be ignored
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) {
+            Block clickedBlock = event.getClickedBlock();
+
+            // Explicit check for flower pots (backup to TileState check)
+            if (isFlowerPot(clickedBlock)) {
+                return; // Let vanilla handle flower pot interactions
+            }
+
+            // Check for TileStates (chests, signs, etc.)
+            if (clickedBlock.getState() instanceof org.bukkit.block.TileState) {
+                return; // Let vanilla handle it - don't process, don't cancel
+            }
+
+            // Check for excluded block types
+            if (isBlockTypeExcluded(clickedBlock)) {
+                return; // Let vanilla handle doors, levers, etc.
+            }
         }
 
         // Check permission
@@ -92,27 +112,8 @@ public class FileListener implements Listener {
             plugin.getLogger().info("[File Debug] Event hand: " + hand + ", Item: " + (item != null ? item.getType() : "null"));
         }
 
-        // Don't allow File tool on tile entities (blocks with complex persistent data)
-        // This includes: chests, signs, spawners, skulls, banners, note blocks, beehives, etc.
-        // TileEntity check catches all blocks with NBT data that shouldn't be rotated/edited
-        if (block.getState() instanceof org.bukkit.block.TileState) {
-            // Silently ignore and allow vanilla behavior (opening GUIs, etc.)
-            if (isDebugEnabled()) {
-                plugin.getLogger().info("[File Debug] Blocked: Block is a TileState (tile entity), allowing vanilla behavior");
-            }
-            // DON'T cancel - allow player to open chests, furnaces, etc.
-            return;
-        }
-
-        // Skip specific problematic block types that shouldn't be editable
-        // Don't cancel - just return to allow vanilla behavior (opening doors, flipping levers, etc.)
-        if (isBlockTypeExcluded(block)) {
-            if (isDebugEnabled()) {
-                plugin.getLogger().info("[File Debug] Skipped: Block type " + block.getType() + " is excluded from File tool, allowing vanilla interaction");
-            }
-            // DON'T cancel - allow player to interact normally with doors, levers, crafting tables, etc.
-            return;
-        }
+        // Note: TileState and exclusion checks are now done earlier in onFileUse()
+        // to prevent any interference with vanilla interactions
 
         FileConfiguration config = plugin.getConfigManager().getConfig();
 
@@ -397,5 +398,17 @@ public class FileListener implements Listener {
                  RAIL, POWERED_RAIL, DETECTOR_RAIL, ACTIVATOR_RAIL -> true;
             default -> false;
         };
+    }
+
+    /**
+     * Check if a block is a flower pot (any variant).
+     * Flower pots should use vanilla interaction (removing flowers).
+     *
+     * @param block the block to check
+     * @return true if the block is a flower pot
+     */
+    private boolean isFlowerPot(Block block) {
+        String materialName = block.getType().name();
+        return materialName.equals("FLOWER_POT") || materialName.startsWith("POTTED_");
     }
 }

@@ -96,20 +96,40 @@ public class TrowelListener implements Listener {
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onTrowelUse(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
         EquipmentSlot hand = event.getHand();
 
-        // Validate tool first
+        // Validate tool FIRST
         if (item == null || !plugin.getItemFactory().isTool(item)) {
-            return;
+            return; // Not our tool, don't interfere at all
         }
 
         ToolType toolType = plugin.getItemFactory().getToolType(item);
         if (toolType != ToolType.TROWEL) {
-            return;
+            return; // Not the Trowel tool
+        }
+
+        // Now that we know it's our tool, check if clicking a block that should be ignored
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) {
+            Block clickedBlock = event.getClickedBlock();
+
+            // Explicit check for flower pots (backup to TileState check)
+            if (isFlowerPot(clickedBlock)) {
+                return; // Let vanilla handle flower pot interactions
+            }
+
+            // Check for TileStates (chests, signs, etc.)
+            if (clickedBlock.getState() instanceof org.bukkit.block.TileState) {
+                return; // Let vanilla handle it - don't process, don't cancel
+            }
+
+            // Check for interactive blocks with GUIs (stonecutters, crafting tables, etc.)
+            if (isInteractiveBlock(clickedBlock)) {
+                return; // Let vanilla handle opening the UI
+            }
         }
 
         // Don't handle if sneaking (handled by feed cycle method)
@@ -673,8 +693,10 @@ public class TrowelListener implements Listener {
      * Check if a block is replaceable (can be placed into).
      */
     private boolean isReplaceable(Block block) {
-        // Check if block is air
-        if (block.getType().isAir()) {
+        Material type = block.getType();
+
+        // Check if block is air, water, or lava (always replaceable)
+        if (type.isAir() || type == Material.WATER || type == Material.LAVA) {
             return true;
         }
 
@@ -685,7 +707,7 @@ public class TrowelListener implements Listener {
         for (String materialName : replaceableList) {
             try {
                 Material replaceable = Material.valueOf(materialName);
-                if (block.getType() == replaceable) {
+                if (type == replaceable) {
                     return true;
                 }
             } catch (IllegalArgumentException e) {
@@ -693,11 +715,8 @@ public class TrowelListener implements Listener {
             }
         }
 
-        // Fallback: use vanilla replaceable check (covers tall grass, flowers, etc.)
-        // Block is replaceable if it's NOT occluding, NOT solid, but IS a block type
-        return !block.getType().isOccluding() &&
-               !block.getType().isSolid() &&
-               block.getType().isBlock();
+        // Only blocks in the config list are replaceable
+        return false;
     }
 
     /**
@@ -796,5 +815,62 @@ public class TrowelListener implements Listener {
         }
 
         return false; // No collision with any player
+    }
+
+    /**
+     * Check if a block is an interactive block with a GUI that should open.
+     * These blocks should not be replaced/placed into when using the Trowel.
+     *
+     * @param block the block to check
+     * @return true if the block should open a GUI instead
+     */
+    private boolean isInteractiveBlock(Block block) {
+        return switch (block.getType()) {
+            case CRAFTING_TABLE,
+                 STONECUTTER,
+                 LOOM,
+                 GRINDSTONE,
+                 CARTOGRAPHY_TABLE,
+                 SMITHING_TABLE,
+                 ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
+                 ENCHANTING_TABLE,
+                 ENDER_CHEST,
+                 // Beds (right-click to sleep)
+                 WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
+                 LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
+                 PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED,
+                 // Redstone components
+                 LEVER,
+                 REPEATER,
+                 COMPARATOR,
+                 // Buttons (all types)
+                 OAK_BUTTON, SPRUCE_BUTTON, BIRCH_BUTTON, JUNGLE_BUTTON,
+                 ACACIA_BUTTON, DARK_OAK_BUTTON, MANGROVE_BUTTON, CHERRY_BUTTON,
+                 BAMBOO_BUTTON, CRIMSON_BUTTON, WARPED_BUTTON,
+                 STONE_BUTTON, POLISHED_BLACKSTONE_BUTTON,
+                 // Note blocks
+                 NOTE_BLOCK,
+                 // Dragon egg
+                 DRAGON_EGG,
+                 // Respawn anchor
+                 RESPAWN_ANCHOR,
+                 // Bell
+                 BELL,
+                 // Cake
+                 CAKE -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Check if a block is a flower pot (any variant).
+     * Flower pots should use vanilla interaction (removing flowers).
+     *
+     * @param block the block to check
+     * @return true if the block is a flower pot
+     */
+    private boolean isFlowerPot(Block block) {
+        String materialName = block.getType().name();
+        return materialName.equals("FLOWER_POT") || materialName.startsWith("POTTED_");
     }
 }

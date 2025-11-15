@@ -1,5 +1,5 @@
 name: OakTools
-version: '1.0.1'
+version: '${version}'
 main: dev.oakheart.oaktools.OakTools
 api-version: '1.21'
 authors: [ Loralon ]

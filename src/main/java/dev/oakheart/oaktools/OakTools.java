@@ -128,6 +128,7 @@ public final class OakTools extends JavaPlugin {
         pluginManager.registerEvents(new AnvilListener(this), this);
         pluginManager.registerEvents(new CraftingListener(this), this);
         pluginManager.registerEvents(new RecipeDiscoveryListener(this), this);
+        pluginManager.registerEvents(new MendingListener(this), this);
 
         getLogger().info("Registered listeners");
     }
