@@ -353,6 +353,23 @@ public class FileListener implements Listener {
                  TRIPWIRE_HOOK,
                  END_PORTAL_FRAME,
                  LADDER,
+                 // Exclude coral fans (wall decorations)
+                 TUBE_CORAL_FAN, TUBE_CORAL_WALL_FAN,
+                 BRAIN_CORAL_FAN, BRAIN_CORAL_WALL_FAN,
+                 BUBBLE_CORAL_FAN, BUBBLE_CORAL_WALL_FAN,
+                 FIRE_CORAL_FAN, FIRE_CORAL_WALL_FAN,
+                 HORN_CORAL_FAN, HORN_CORAL_WALL_FAN,
+                 DEAD_TUBE_CORAL_FAN, DEAD_TUBE_CORAL_WALL_FAN,
+                 DEAD_BRAIN_CORAL_FAN, DEAD_BRAIN_CORAL_WALL_FAN,
+                 DEAD_BUBBLE_CORAL_FAN, DEAD_BUBBLE_CORAL_WALL_FAN,
+                 DEAD_FIRE_CORAL_FAN, DEAD_FIRE_CORAL_WALL_FAN,
+                 DEAD_HORN_CORAL_FAN, DEAD_HORN_CORAL_WALL_FAN,
+                 // Exclude glow lichen (decorative cave block)
+                 GLOW_LICHEN,
+                 // Exclude sculk veins (decorative cave block, has MultipleFacing)
+                 SCULK_VEIN,
+                 // Exclude amethyst buds and clusters (decorative cave blocks)
+                 SMALL_AMETHYST_BUD, MEDIUM_AMETHYST_BUD, LARGE_AMETHYST_BUD, AMETHYST_CLUSTER,
                  // Exclude interactive blocks with GUIs
                  CRAFTING_TABLE,
                  LOOM, GRINDSTONE, STONECUTTER,
