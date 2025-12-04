@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerItemMendEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -136,5 +137,13 @@ public class MendingListener implements Listener {
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             activeMending.remove(uuid);
         }, 5L);
+    }
+
+    /**
+     * Clean up tracking data when a player disconnects to prevent memory leaks.
+     */
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        activeMending.remove(event.getPlayer().getUniqueId());
     }
 }

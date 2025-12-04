@@ -43,10 +43,16 @@ tools:
 
     # Item settings
     base_material: WARPED_FUNGUS_ON_A_STICK  # CARROT_ON_A_STICK, WARPED_FUNGUS_ON_A_STICK, etc.
-    # Model settings:
-    #   Integer (e.g., 1001) → Vanilla CustomModelData
-    #   "nexo:file" → Nexo provider
-    #   "itemsadder:file" → ItemsAdder provider
+    # Model settings (choose one format):
+    #   Integer (e.g., 1001) → Vanilla CustomModelData (legacy)
+    #   "model:namespace:key" → Modern Item Model (1.21.4+, recommended)
+    #   "nexo:id" → Nexo plugin
+    #   "itemsadder:id" → ItemsAdder plugin
+    # Examples:
+    #   model_id: 1001
+    #   model_id: "model:oaktools:file"
+    #   model_id: "nexo:file"
+    #   model_id: "itemsadder:oaktools:file"
     model_id: "nexo:file"
 
     # Durability settings
@@ -95,10 +101,16 @@ tools:
 
     # Item settings
     base_material: WARPED_FUNGUS_ON_A_STICK  # CARROT_ON_A_STICK, WARPED_FUNGUS_ON_A_STICK, etc.
-    # Model settings:
-    #   Integer (e.g., 1002) → Vanilla CustomModelData
-    #   "nexo:trowel" → Nexo provider
-    #   "itemsadder:trowel" → ItemsAdder provider
+    # Model settings (choose one format):
+    #   Integer (e.g., 1002) → Vanilla CustomModelData (legacy)
+    #   "model:namespace:key" → Modern Item Model (1.21.4+, recommended)
+    #   "nexo:id" → Nexo plugin
+    #   "itemsadder:id" → ItemsAdder plugin
+    # Examples:
+    #   model_id: 1002
+    #   model_id: "model:oaktools:trowel"
+    #   model_id: "nexo:trowel"
+    #   model_id: "itemsadder:oaktools:trowel"
     model_id: "nexo:trowel"
 
     # Durability settings

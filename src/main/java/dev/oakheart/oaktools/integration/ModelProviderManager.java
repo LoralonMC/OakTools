@@ -9,7 +9,11 @@ import java.util.logging.Logger;
 
 /**
  * Manages model provider detection and application.
- * Determines provider based on model_id prefix (nexo:, itemsadder:, or vanilla).
+ * Determines provider based on model_id prefix:
+ * - Integer (e.g., 1001) → Vanilla CustomModelData
+ * - "model:namespace:key" → Modern Item Model (1.21.4+)
+ * - "nexo:id" → Nexo plugin
+ * - "itemsadder:id" → ItemsAdder plugin
  */
 public class ModelProviderManager {
 
@@ -81,7 +85,16 @@ public class ModelProviderManager {
         ModelProvider provider;
         String actualModelId = modelId;
 
-        if (modelId.toLowerCase().startsWith("nexo:")) {
+        if (modelId.toLowerCase().startsWith("model:")) {
+            provider = new ItemModelProvider();
+            actualModelId = modelId.substring(6); // Remove "model:" prefix
+
+            if (!provider.isAvailable()) {
+                logger.warning("Item Model provider requested but not available (requires Paper 1.21.4+) for " + toolType.name());
+                logger.warning("Falling back to no custom model. Consider using CustomModelData instead.");
+                return false;
+            }
+        } else if (modelId.toLowerCase().startsWith("nexo:")) {
             provider = new NexoProvider();
             actualModelId = modelId.substring(5); // Remove "nexo:" prefix
 
@@ -100,7 +113,7 @@ public class ModelProviderManager {
         } else {
             // No recognized prefix - treat as vanilla integer
             logger.warning("Unrecognized model_id format '" + modelId + "' for " + toolType.name());
-            logger.warning("Use an integer for vanilla CustomModelData, 'nexo:id' for Nexo, or 'itemsadder:id' for ItemsAdder");
+            logger.warning("Use an integer for vanilla CustomModelData, 'model:namespace:key' for Item Model, 'nexo:id' for Nexo, or 'itemsadder:id' for ItemsAdder");
             return false;
         }
 
@@ -118,20 +131,22 @@ public class ModelProviderManager {
      * Get provider name from model ID.
      */
     private String getProviderName(String modelId) {
-        // Check if it's a number (vanilla)
+        // Check if it's a number (vanilla CustomModelData)
         try {
             Integer.parseInt(modelId);
-            return "Vanilla";
+            return "Vanilla CustomModelData";
         } catch (NumberFormatException ignored) {
             // Not a number, check prefix
         }
 
-        if (modelId.toLowerCase().startsWith("nexo:")) {
+        if (modelId.toLowerCase().startsWith("model:")) {
+            return "Item Model";
+        } else if (modelId.toLowerCase().startsWith("nexo:")) {
             return "Nexo";
         } else if (modelId.toLowerCase().startsWith("itemsadder:")) {
             return "ItemsAdder";
         } else {
-            return "Vanilla";
+            return "Unknown";
         }
     }
 }
