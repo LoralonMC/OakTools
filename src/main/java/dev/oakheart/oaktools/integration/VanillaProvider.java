@@ -9,12 +9,10 @@ import org.bukkit.inventory.meta.ItemMeta;
  */
 public class VanillaProvider implements ModelProvider {
 
-    private final int fileModelData;
-    private final int trowelModelData;
+    private final int customModelData;
 
-    public VanillaProvider(int fileModelData, int trowelModelData) {
-        this.fileModelData = fileModelData;
-        this.trowelModelData = trowelModelData;
+    public VanillaProvider(int customModelData) {
+        this.customModelData = customModelData;
     }
 
     @Override
@@ -33,11 +31,6 @@ public class VanillaProvider implements ModelProvider {
         if (meta == null) {
             return false;
         }
-
-        int customModelData = switch (toolType) {
-            case FILE -> fileModelData;
-            case TROWEL -> trowelModelData;
-        };
 
         meta.setCustomModelData(customModelData);
         item.setItemMeta(meta);

@@ -70,7 +70,7 @@ public class ModelProviderManager {
         // Check if model_id is an integer (vanilla CustomModelData)
         if (config.isInt(toolPath + ".model_id")) {
             int customModelData = config.getInt(toolPath + ".model_id", 1001);
-            VanillaProvider vanillaProvider = new VanillaProvider(customModelData, customModelData);
+            VanillaProvider vanillaProvider = new VanillaProvider(customModelData);
             return vanillaProvider.applyModel(item, toolType, "");
         }
 

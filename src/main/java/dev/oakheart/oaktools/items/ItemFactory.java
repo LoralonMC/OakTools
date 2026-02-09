@@ -37,13 +37,13 @@ public class ItemFactory {
     }
 
     /**
-     * Create a new tool item with specific durability.
+     * Create a new tool item with specific damage.
      *
      * @param toolType the type of tool to create
-     * @param currentDurability the current durability (0 = full, max = broken)
+     * @param damage the initial damage (0 = full health, max = broken)
      * @return the created ItemStack
      */
-    public ItemStack createTool(ToolType toolType, int currentDurability) {
+    public ItemStack createTool(ToolType toolType, int damage) {
         FileConfiguration config = plugin.getConfigManager().getConfig();
         String toolPath = "tools." + toolType.name().toLowerCase();
 
@@ -69,7 +69,7 @@ public class ItemFactory {
         // Set PDC data
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(Constants.TOOL_TYPE, PersistentDataType.STRING, toolType.name());
-        pdc.set(Constants.DURABILITY, PersistentDataType.INTEGER, currentDurability);
+        pdc.set(Constants.DURABILITY, PersistentDataType.INTEGER, damage);
         pdc.set(Constants.MAX_DURABILITY, PersistentDataType.INTEGER, maxDurability);
 
         // Set default feed source for Trowel
@@ -80,7 +80,7 @@ public class ItemFactory {
         // Apply vanilla durability bar (visual only)
         if (config.getBoolean(toolPath + ".durability.use_vanilla_damage_bar", true) && meta instanceof Damageable damageable) {
             int vanillaMaxDurability = baseMaterial.getMaxDurability();
-            int vanillaDamage = calculateVanillaDamage(currentDurability, maxDurability, vanillaMaxDurability);
+            int vanillaDamage = calculateVanillaDamage(damage, maxDurability, vanillaMaxDurability);
             damageable.setDamage(vanillaDamage);
         }
 

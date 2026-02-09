@@ -62,29 +62,25 @@ public class CoreProtectLogger {
             return;
         }
 
-        // Must run synchronously to access block entities (hoppers, chests, etc.)
-        // CoreProtect's API is efficient enough that sync logging doesn't cause lag
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            try {
-                // Log break (old state)
-                coreProtectAPI.logRemoval(
-                        player.getName(),
-                        block.getLocation(),
-                        oldData.getMaterial(),
-                        oldData
-                );
+        try {
+            // Log break (old state)
+            coreProtectAPI.logRemoval(
+                    player.getName(),
+                    block.getLocation(),
+                    oldData.getMaterial(),
+                    oldData
+            );
 
-                // Log place (new state)
-                coreProtectAPI.logPlacement(
-                        player.getName(),
-                        block.getLocation(),
-                        newData.getMaterial(),
-                        newData
-                );
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to log File edit to CoreProtect: " + e.getMessage());
-            }
-        });
+            // Log place (new state)
+            coreProtectAPI.logPlacement(
+                    player.getName(),
+                    block.getLocation(),
+                    newData.getMaterial(),
+                    newData
+            );
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to log File edit to CoreProtect: " + e.getMessage());
+        }
     }
 
     /**
@@ -100,19 +96,16 @@ public class CoreProtectLogger {
             return;
         }
 
-        // Must run synchronously to access block entities (if placing chests, hoppers, etc.)
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            try {
-                coreProtectAPI.logPlacement(
-                        player.getName(),
-                        block.getLocation(),
-                        blockData.getMaterial(),
-                        blockData
-                );
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to log Trowel placement to CoreProtect: " + e.getMessage());
-            }
-        });
+        try {
+            coreProtectAPI.logPlacement(
+                    player.getName(),
+                    block.getLocation(),
+                    blockData.getMaterial(),
+                    blockData
+            );
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to log Trowel placement to CoreProtect: " + e.getMessage());
+        }
     }
 
     /**

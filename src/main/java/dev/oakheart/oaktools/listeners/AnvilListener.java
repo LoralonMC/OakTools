@@ -4,6 +4,8 @@ import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.util.Constants;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
@@ -19,6 +21,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,7 +40,7 @@ public class AnvilListener implements Listener {
      * Check if debug logging is enabled in config.
      */
     private boolean isDebugEnabled() {
-        return plugin.getConfigManager().getConfig().getBoolean("general.debug", false);
+        return plugin.getConfigManager().isDebug();
     }
 
     /**
@@ -74,8 +77,8 @@ public class AnvilListener implements Listener {
                     .getStringList(toolPath + ".allowed_enchantments");
 
             Set<Enchantment> allowedEnchants = allowedEnchantNames.stream()
-                    .map(Enchantment::getByName)
-                    .filter(enchant -> enchant != null)
+                    .map(name -> Registry.ENCHANTMENT.get(NamespacedKey.minecraft(name.toLowerCase())))
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
             for (Enchantment enchant : enchants.keySet()) {

@@ -4,6 +4,7 @@ import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.events.TrowelPlaceEvent;
 import dev.oakheart.oaktools.model.FeedSource;
 import dev.oakheart.oaktools.model.ToolType;
+import dev.oakheart.oaktools.util.BlockUtil;
 import dev.oakheart.oaktools.util.Constants;
 import dev.oakheart.oaktools.util.InventoryUtil;
 import dev.oakheart.oaktools.util.PlacementUtil;
@@ -49,7 +50,7 @@ public class TrowelListener implements Listener {
      * Check if debug logging is enabled in config.
      */
     private boolean isDebugEnabled() {
-        return plugin.getConfigManager().getConfig().getBoolean("general.debug", false);
+        return plugin.getConfigManager().isDebug();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
@@ -91,6 +92,13 @@ public class TrowelListener implements Listener {
             return;
         }
 
+        // Check world restriction
+        if (!BlockUtil.isWorldAllowed(player, plugin.getConfigManager().getConfig())) {
+            plugin.getMessageService().sendMessage(player, "world_denied");
+            event.setCancelled(true);
+            return;
+        }
+
         // Cycle feed source
         cycleFeedSource(player, item, hand);
         event.setCancelled(true);
@@ -117,7 +125,7 @@ public class TrowelListener implements Listener {
             Block clickedBlock = event.getClickedBlock();
 
             // Explicit check for flower pots (backup to TileState check)
-            if (isFlowerPot(clickedBlock)) {
+            if (BlockUtil.isFlowerPot(clickedBlock)) {
                 return; // Let vanilla handle flower pot interactions
             }
 
@@ -127,7 +135,7 @@ public class TrowelListener implements Listener {
             }
 
             // Check for interactive blocks with GUIs (stonecutters, crafting tables, etc.)
-            if (isInteractiveBlock(clickedBlock)) {
+            if (BlockUtil.isInteractiveBlock(clickedBlock)) {
                 return; // Let vanilla handle opening the UI
             }
         }
@@ -150,7 +158,14 @@ public class TrowelListener implements Listener {
         }
 
         // Check gamemode
-        if (!canUseInGamemode(player)) {
+        if (!BlockUtil.canUseInGamemode(player, plugin.getConfigManager().getConfig())) {
+            return;
+        }
+
+        // Check world restriction
+        if (!BlockUtil.isWorldAllowed(player, plugin.getConfigManager().getConfig())) {
+            plugin.getMessageService().sendMessage(player, "world_denied");
+            event.setCancelled(true);
             return;
         }
 
@@ -272,6 +287,7 @@ public class TrowelListener implements Listener {
         Block targetBlock;
         Block referenceBlock;  // The solid block to use for placement calculations
         BlockFace referenceFace = event.getBlockFace();
+        org.bukkit.util.RayTraceResult cachedRayTrace = null;  // Cache ray trace for reuse
 
         if (isReplaceable(clickedBlock)) {
             // Placing into grass/flowers - replace them
@@ -288,7 +304,8 @@ public class TrowelListener implements Listener {
             targetBlock = clickedBlock;
 
             // Perform a ray trace from the player to find what solid block they're looking at through the grass
-            var rayTraceResult = player.rayTraceBlocks(6.0, org.bukkit.FluidCollisionMode.NEVER);
+            cachedRayTrace = player.rayTraceBlocks(6.0, org.bukkit.FluidCollisionMode.NEVER);
+            var rayTraceResult = cachedRayTrace;
 
             if (isDebugEnabled()) {
                 plugin.getLogger().info("[Trowel Debug] Placing through replaceable block at " +
@@ -418,9 +435,9 @@ public class TrowelListener implements Listener {
         // Get the interaction point (exact click location)
         Vector interactionPoint;
 
-        // If we used ray tracing and found a reference block, use the ray trace hit position
+        // If we used ray tracing and found a reference block, use the cached ray trace hit position
         if (!referenceBlock.equals(clickedBlock)) {
-            var rayTraceResult = player.rayTraceBlocks(6.0, org.bukkit.FluidCollisionMode.NEVER);
+            var rayTraceResult = cachedRayTrace;
             if (rayTraceResult != null && rayTraceResult.getHitPosition() != null) {
                 interactionPoint = rayTraceResult.getHitPosition();
 
@@ -700,39 +717,10 @@ public class TrowelListener implements Listener {
             return true;
         }
 
-        // Check config list
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-        List<String> replaceableList = config.getStringList("tools.trowel.can_replace");
-
-        for (String materialName : replaceableList) {
-            try {
-                Material replaceable = Material.valueOf(materialName);
-                if (type == replaceable) {
-                    return true;
-                }
-            } catch (IllegalArgumentException e) {
-                // Invalid material in config, skip
-            }
-        }
-
-        // Only blocks in the config list are replaceable
-        return false;
+        // Check cached materials set
+        return plugin.getConfigManager().getReplaceableMaterials().contains(type);
     }
 
-    /**
-     * Check if player can use Trowel in their current gamemode.
-     */
-    private boolean canUseInGamemode(Player player) {
-        GameMode mode = player.getGameMode();
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-
-        return switch (mode) {
-            case CREATIVE -> config.getBoolean("general.restrictions.gamemode.creative.allow_use", true);
-            case ADVENTURE -> config.getBoolean("general.restrictions.gamemode.adventure.allow_use", false);
-            case SPECTATOR -> config.getBoolean("general.restrictions.gamemode.spectator.allow_use", false);
-            default -> true;
-        };
-    }
 
     /**
      * Check if blocks should be consumed from inventory.
@@ -778,9 +766,9 @@ public class TrowelListener implements Listener {
         double blockMinZ = blockZ;
         double blockMaxZ = blockZ + 1.0;
 
-        // Check collision with all nearby players (within 5 blocks for performance)
+        // Check collision with all nearby players (within 2 blocks - player hitbox is < 1 block wide)
         for (org.bukkit.entity.Entity entity : targetBlock.getWorld().getNearbyEntities(
-                targetBlock.getLocation().add(0.5, 0.5, 0.5), 5, 5, 5)) {
+                targetBlock.getLocation().add(0.5, 0.5, 0.5), 2, 2, 2)) {
 
             if (!(entity instanceof Player)) {
                 continue;
@@ -817,60 +805,4 @@ public class TrowelListener implements Listener {
         return false; // No collision with any player
     }
 
-    /**
-     * Check if a block is an interactive block with a GUI that should open.
-     * These blocks should not be replaced/placed into when using the Trowel.
-     *
-     * @param block the block to check
-     * @return true if the block should open a GUI instead
-     */
-    private boolean isInteractiveBlock(Block block) {
-        return switch (block.getType()) {
-            case CRAFTING_TABLE,
-                 STONECUTTER,
-                 LOOM,
-                 GRINDSTONE,
-                 CARTOGRAPHY_TABLE,
-                 SMITHING_TABLE,
-                 ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
-                 ENCHANTING_TABLE,
-                 ENDER_CHEST,
-                 // Beds (right-click to sleep)
-                 WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
-                 LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
-                 PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED,
-                 // Redstone components
-                 LEVER,
-                 REPEATER,
-                 COMPARATOR,
-                 // Buttons (all types)
-                 OAK_BUTTON, SPRUCE_BUTTON, BIRCH_BUTTON, JUNGLE_BUTTON,
-                 ACACIA_BUTTON, DARK_OAK_BUTTON, MANGROVE_BUTTON, CHERRY_BUTTON,
-                 BAMBOO_BUTTON, CRIMSON_BUTTON, WARPED_BUTTON,
-                 STONE_BUTTON, POLISHED_BLACKSTONE_BUTTON,
-                 // Note blocks
-                 NOTE_BLOCK,
-                 // Dragon egg
-                 DRAGON_EGG,
-                 // Respawn anchor
-                 RESPAWN_ANCHOR,
-                 // Bell
-                 BELL,
-                 // Cake
-                 CAKE -> true;
-            default -> false;
-        };
-    }
-
-    /**
-     * Check if a block is a flower pot (any variant).
-     * Flower pots should use vanilla interaction (removing flowers).
-     *
-     * @param block the block to check
-     * @return true if the block is a flower pot
-     */
-    private boolean isFlowerPot(Block block) {
-        String materialName = block.getType().name();
-        return materialName.equals("FLOWER_POT") || materialName.startsWith("POTTED_");
-    }
 }

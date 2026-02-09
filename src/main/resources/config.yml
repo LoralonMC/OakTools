@@ -10,10 +10,10 @@ general:
   restrictions:
     # World restrictions
     worlds:
-      mode: WHITELIST  # WHITELIST or BLACKLIST
+      mode: BLACKLIST  # WHITELIST or BLACKLIST
       list:
-        - world
-        - creative
+        - example_disabled_world
+        - example_minigames_world
 
     # Gamemode-specific behavior
     gamemode:
@@ -210,6 +210,12 @@ messages:
     delivery:
       - actionbar
     content: "<gray>Feed source:</gray> <white>%feed_source%</white>"
+
+  world_denied:
+    enabled: true
+    delivery:
+      - actionbar
+    content: "<red>Tools cannot be used in this world</red>"
 
   no_permission:
     enabled: true

@@ -47,13 +47,14 @@ public class ConfigValidator {
             return false;
         }
 
-        // Validate durability.max
+        // Validate durability.max (critical - tool cannot function without valid max)
         int maxDur = section.getInt("durability.max", -1);
         if (maxDur <= 0) {
             logger.warning(path + ".durability.max must be > 0. Found: " + maxDur);
+            return false;
         }
 
-        // Validate durability.repair_material
+        // Validate durability.repair_material (non-critical, anvil repair just won't work)
         String repairMat = section.getString("durability.repair_material", "");
         try {
             Material.valueOf(repairMat);
@@ -61,7 +62,7 @@ public class ConfigValidator {
             logger.warning(path + ".durability.repair_material '" + repairMat + "' is not a valid material.");
         }
 
-        // Validate durability.repair_amount
+        // Validate durability.repair_amount (non-critical, anvil repair just won't work)
         int repairAmount = section.getInt("durability.repair_amount", -1);
         if (repairAmount <= 0) {
             logger.warning(path + ".durability.repair_amount must be > 0. Found: " + repairAmount);
@@ -74,6 +75,7 @@ public class ConfigValidator {
         String worldsMode = config.getString("general.restrictions.worlds.mode", "WHITELIST");
         if (!worldsMode.equals("WHITELIST") && !worldsMode.equals("BLACKLIST")) {
             logger.warning("general.restrictions.worlds.mode must be 'WHITELIST' or 'BLACKLIST'. Found: " + worldsMode);
+            return false;
         }
 
         return true;
@@ -86,6 +88,7 @@ public class ConfigValidator {
             ConfigurationSection display = config.getConfigurationSection(path);
             if (display == null) {
                 logger.warning("Missing display configuration section: " + path);
+                return false;
             }
         }
 

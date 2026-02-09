@@ -1,12 +1,16 @@
 package dev.oakheart.oaktools.util;
 
 import org.bukkit.Axis;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.Wall;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 
 /**
  * Utility class for block state manipulation.
@@ -197,7 +201,46 @@ public class BlockUtil {
         }
 
         wall.setHeight(sideToModify, nextHeight);
+
+        // Recalculate the "up" (center post) property based on new connections.
+        // Vanilla rule: up=false only when exactly 2 collinear connections of the same height.
+        wall.setUp(shouldWallBeUp(wall));
+
         block.setBlockData(wall, false);
+        return true;
+    }
+
+    /**
+     * Determine whether a wall's center post ("up") should be visible.
+     * In vanilla, the post is hidden only when the wall has exactly two collinear
+     * connections (N+S or E+W) of the same height.
+     *
+     * @param wall the wall block data
+     * @return true if the center post should be shown
+     */
+    private static boolean shouldWallBeUp(Wall wall) {
+        Wall.Height north = wall.getHeight(BlockFace.NORTH);
+        Wall.Height south = wall.getHeight(BlockFace.SOUTH);
+        Wall.Height east = wall.getHeight(BlockFace.EAST);
+        Wall.Height west = wall.getHeight(BlockFace.WEST);
+
+        boolean hasNorth = north != Wall.Height.NONE;
+        boolean hasSouth = south != Wall.Height.NONE;
+        boolean hasEast = east != Wall.Height.NONE;
+        boolean hasWest = west != Wall.Height.NONE;
+
+        int connectionCount = (hasNorth ? 1 : 0) + (hasSouth ? 1 : 0) + (hasEast ? 1 : 0) + (hasWest ? 1 : 0);
+
+        // Post hidden only with exactly 2 collinear same-height connections
+        if (connectionCount == 2) {
+            if (hasNorth && hasSouth && !hasEast && !hasWest && north == south) {
+                return false;
+            }
+            if (hasEast && hasWest && !hasNorth && !hasSouth && east == west) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -668,6 +711,99 @@ public class BlockUtil {
         stairs.setHalf(newHalf);
         block.setBlockData(stairs, false);
         return true;
+    }
+
+    /**
+     * Check if a block is a flower pot (any variant).
+     * Flower pots should use vanilla interaction (removing flowers).
+     *
+     * @param block the block to check
+     * @return true if the block is a flower pot
+     */
+    public static boolean isFlowerPot(Block block) {
+        String materialName = block.getType().name();
+        return materialName.equals("FLOWER_POT") || materialName.startsWith("POTTED_");
+    }
+
+    /**
+     * Check if a player can use tools in their current gamemode.
+     *
+     * @param player the player to check
+     * @param config the plugin configuration
+     * @return true if the player can use tools
+     */
+    public static boolean canUseInGamemode(Player player, FileConfiguration config) {
+        GameMode mode = player.getGameMode();
+        return switch (mode) {
+            case CREATIVE -> config.getBoolean("general.restrictions.gamemode.creative.allow_use", true);
+            case ADVENTURE -> config.getBoolean("general.restrictions.gamemode.adventure.allow_use", false);
+            case SPECTATOR -> config.getBoolean("general.restrictions.gamemode.spectator.allow_use", false);
+            default -> true;
+        };
+    }
+
+    /**
+     * Check if a block is an interactive block that should not be modified by tools.
+     * Includes blocks with GUIs, redstone components, and special blocks.
+     *
+     * @param block the block to check
+     * @return true if the block is interactive
+     */
+    public static boolean isInteractiveBlock(Block block) {
+        return switch (block.getType()) {
+            case CRAFTING_TABLE,
+                 STONECUTTER,
+                 LOOM,
+                 GRINDSTONE,
+                 CARTOGRAPHY_TABLE,
+                 SMITHING_TABLE,
+                 ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
+                 ENCHANTING_TABLE,
+                 ENDER_CHEST,
+                 // Beds (right-click to sleep)
+                 WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
+                 LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
+                 PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED,
+                 // Redstone components
+                 LEVER,
+                 REPEATER,
+                 COMPARATOR,
+                 // Buttons (all types)
+                 OAK_BUTTON, SPRUCE_BUTTON, BIRCH_BUTTON, JUNGLE_BUTTON,
+                 ACACIA_BUTTON, DARK_OAK_BUTTON, MANGROVE_BUTTON, CHERRY_BUTTON,
+                 BAMBOO_BUTTON, CRIMSON_BUTTON, WARPED_BUTTON,
+                 STONE_BUTTON, POLISHED_BLACKSTONE_BUTTON,
+                 // Note blocks
+                 NOTE_BLOCK,
+                 // Dragon egg
+                 DRAGON_EGG,
+                 // Respawn anchor
+                 RESPAWN_ANCHOR,
+                 // Bell
+                 BELL,
+                 // Cake
+                 CAKE -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Check if a player's current world is allowed for tool usage.
+     *
+     * @param player the player to check
+     * @param config the plugin configuration
+     * @return true if the player's world is allowed
+     */
+    public static boolean isWorldAllowed(Player player, FileConfiguration config) {
+        String worldName = player.getWorld().getName();
+        String mode = config.getString("general.restrictions.worlds.mode", "WHITELIST");
+        java.util.List<String> worldList = config.getStringList("general.restrictions.worlds.list");
+
+        if (mode.equalsIgnoreCase("WHITELIST")) {
+            return worldList.contains(worldName);
+        } else {
+            return !worldList.contains(worldName);
+        }
     }
 
     /**

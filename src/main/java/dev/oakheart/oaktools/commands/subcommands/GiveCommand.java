@@ -58,6 +58,15 @@ public class GiveCommand {
                         Map.of("value", args[3]));
                 return true;
             }
+
+            // Validate bounds
+            int maxDurability = plugin.getConfigManager().getConfig()
+                    .getInt("tools." + toolType.name().toLowerCase() + ".durability.max", 250);
+            if (durability < 0 || durability > maxDurability) {
+                plugin.getMessageService().sendCommandMessage(sender, "give.invalid_durability",
+                        Map.of("value", args[3]));
+                return true;
+            }
         }
 
         // Create and give tool

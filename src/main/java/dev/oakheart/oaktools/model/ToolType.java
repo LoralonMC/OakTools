@@ -8,19 +8,19 @@ public enum ToolType {
     TROWEL;
 
     /**
-     * Safely parse a ToolType from a string, with fallback.
+     * Safely parse a ToolType from a string.
      *
      * @param value the string value to parse
-     * @return the ToolType, or FILE as fallback
+     * @return the ToolType, or null if unknown/null
      */
     public static ToolType fromString(String value) {
         if (value == null) {
-            return FILE;
+            return null;
         }
         try {
             return ToolType.valueOf(value.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return FILE;
+            return null;
         }
     }
 

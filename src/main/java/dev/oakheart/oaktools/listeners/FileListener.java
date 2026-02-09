@@ -5,9 +5,6 @@ import dev.oakheart.oaktools.events.FileUseEvent;
 import dev.oakheart.oaktools.model.EditType;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.util.BlockUtil;
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.sound.Sound;
-import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -35,7 +32,7 @@ public class FileListener implements Listener {
      * Check if debug logging is enabled in config.
      */
     private boolean isDebugEnabled() {
-        return plugin.getConfigManager().getConfig().getBoolean("general.debug", false);
+        return plugin.getConfigManager().isDebug();
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -59,7 +56,7 @@ public class FileListener implements Listener {
             Block clickedBlock = event.getClickedBlock();
 
             // Explicit check for flower pots (backup to TileState check)
-            if (isFlowerPot(clickedBlock)) {
+            if (BlockUtil.isFlowerPot(clickedBlock)) {
                 return; // Let vanilla handle flower pot interactions
             }
 
@@ -87,7 +84,14 @@ public class FileListener implements Listener {
         }
 
         // Check gamemode
-        if (!canUseInGamemode(player)) {
+        if (!BlockUtil.canUseInGamemode(player, plugin.getConfigManager().getConfig())) {
+            return;
+        }
+
+        // Check world restriction
+        if (!BlockUtil.isWorldAllowed(player, plugin.getConfigManager().getConfig())) {
+            plugin.getMessageService().sendMessage(player, "world_denied");
+            event.setCancelled(true);
             return;
         }
 
@@ -297,20 +301,6 @@ public class FileListener implements Listener {
         // Event already cancelled at the top of handleRightClick
     }
 
-    /**
-     * Check if player can use File in their current gamemode.
-     */
-    private boolean canUseInGamemode(Player player) {
-        GameMode mode = player.getGameMode();
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-
-        return switch (mode) {
-            case CREATIVE -> config.getBoolean("general.restrictions.gamemode.creative.allow_use", true);
-            case ADVENTURE -> config.getBoolean("general.restrictions.gamemode.adventure.allow_use", false);
-            case SPECTATOR -> config.getBoolean("general.restrictions.gamemode.spectator.allow_use", false);
-            default -> true;
-        };
-    }
 
     /**
      * Check if a block type should be excluded from File tool editing.
@@ -417,15 +407,4 @@ public class FileListener implements Listener {
         };
     }
 
-    /**
-     * Check if a block is a flower pot (any variant).
-     * Flower pots should use vanilla interaction (removing flowers).
-     *
-     * @param block the block to check
-     * @return true if the block is a flower pot
-     */
-    private boolean isFlowerPot(Block block) {
-        String materialName = block.getType().name();
-        return materialName.equals("FLOWER_POT") || materialName.startsWith("POTTED_");
-    }
 }

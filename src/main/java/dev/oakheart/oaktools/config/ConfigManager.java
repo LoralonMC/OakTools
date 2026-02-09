@@ -1,6 +1,7 @@
 package dev.oakheart.oaktools.config;
 
 import dev.oakheart.oaktools.OakTools;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -9,6 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -18,6 +22,10 @@ public class ConfigManager {
 
     private final OakTools plugin;
     private FileConfiguration config;
+
+    // Cached config values for hot paths
+    private Set<Material> cachedReplaceableMaterials = EnumSet.noneOf(Material.class);
+    private boolean cachedDebug = false;
 
     public ConfigManager(OakTools plugin) {
         this.plugin = plugin;
@@ -42,6 +50,9 @@ public class ConfigManager {
 
         // Validate configuration
         ConfigValidator.validate(config, plugin.getLogger());
+
+        // Rebuild cached values
+        rebuildCaches();
     }
 
     /**
@@ -146,6 +157,7 @@ public class ConfigManager {
             }
 
             this.config = newConfig;
+            rebuildCaches();
             plugin.getLogger().info("Configuration reloaded successfully.");
             return true;
 
@@ -162,5 +174,43 @@ public class ConfigManager {
      */
     public FileConfiguration getConfig() {
         return config;
+    }
+
+    /**
+     * Rebuild cached configuration values for hot paths.
+     */
+    private void rebuildCaches() {
+        // Cache debug flag
+        cachedDebug = config.getBoolean("general.debug", false);
+
+        // Cache replaceable materials
+        Set<Material> materials = EnumSet.noneOf(Material.class);
+        List<String> replaceableList = config.getStringList("tools.trowel.can_replace");
+        for (String materialName : replaceableList) {
+            try {
+                materials.add(Material.valueOf(materialName));
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid replaceable material in config: " + materialName);
+            }
+        }
+        cachedReplaceableMaterials = materials;
+    }
+
+    /**
+     * Get the cached set of replaceable materials for the Trowel.
+     *
+     * @return unmodifiable set of replaceable materials
+     */
+    public Set<Material> getReplaceableMaterials() {
+        return cachedReplaceableMaterials;
+    }
+
+    /**
+     * Get the cached debug flag.
+     *
+     * @return true if debug mode is enabled
+     */
+    public boolean isDebug() {
+        return cachedDebug;
     }
 }

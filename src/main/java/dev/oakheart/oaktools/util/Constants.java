@@ -11,6 +11,9 @@ public class Constants {
     // Namespace
     public static final String NAMESPACE = "oaktools";
 
+    // Init guard
+    private static boolean initialized = false;
+
     // PDC Keys (initialized in init())
     public static NamespacedKey TOOL_TYPE;
     public static NamespacedKey DURABILITY;
@@ -19,13 +22,18 @@ public class Constants {
 
     /**
      * Initialize all NamespacedKeys. Must be called on plugin enable.
+     * Guarded against double initialization.
      *
      * @param plugin the plugin instance
      */
     public static void init(Plugin plugin) {
+        if (initialized) {
+            return;
+        }
         TOOL_TYPE = new NamespacedKey(plugin, "tool_type");
         DURABILITY = new NamespacedKey(plugin, "dur");
         MAX_DURABILITY = new NamespacedKey(plugin, "max_dur");
         FEED_SOURCE = new NamespacedKey(plugin, "feed_source");
+        initialized = true;
     }
 }
