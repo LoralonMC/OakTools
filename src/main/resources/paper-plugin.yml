@@ -1,0 +1,22 @@
+name: OakTools
+version: '${version}'
+main: dev.oakheart.oaktools.OakTools
+description: 'Player-friendly building utilities for survival.'
+api-version: '1.21.8'
+authors:
+  - Loralon
+website: https://github.com/LoralonMC/OakTools
+dependencies:
+  server:
+    ItemsAdder:
+      load: BEFORE
+      required: false
+    Nexo:
+      load: BEFORE
+      required: false
+    CoreProtect:
+      load: BEFORE
+      required: false
+    Vulcan:
+      load: BEFORE
+      required: false

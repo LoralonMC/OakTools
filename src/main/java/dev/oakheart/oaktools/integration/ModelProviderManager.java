@@ -7,14 +7,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.logging.Logger;
 
-/**
- * Manages model provider detection and application.
- * Determines provider based on model_id prefix:
- * - Integer (e.g., 1001) → Vanilla CustomModelData
- * - "model:namespace:key" → Modern Item Model (1.21.4+)
- * - "nexo:id" → Nexo plugin
- * - "itemsadder:id" → ItemsAdder plugin
- */
 public class ModelProviderManager {
 
     private final OakTools plugin;
@@ -25,69 +17,68 @@ public class ModelProviderManager {
         this.logger = plugin.getLogger();
     }
 
-    /**
-     * Initialize and log configured model IDs.
-     */
     public void initialize() {
         FileConfiguration config = plugin.getConfigManager().getConfig();
 
-        // Log model IDs being used
-        String fileModel = getModelIdAsString(config, "tools.file.model_id");
-        String trowelModel = getModelIdAsString(config, "tools.trowel.model_id");
+        String fileModel = getModelIdAsString(config, "tools.file.model-id");
+        String trowelModel = getModelIdAsString(config, "tools.trowel.model-id");
+        String wandModel = getModelIdAsString(config, "tools.wand.model-id");
         String fileProvider = getProviderName(fileModel);
         String trowelProvider = getProviderName(trowelModel);
+        String wandProvider = getProviderName(wandModel);
 
         logger.info("Model configuration:");
         logger.info("  File: " + fileModel + " (provider: " + fileProvider + ")");
         logger.info("  Trowel: " + trowelModel + " (provider: " + trowelProvider + ")");
+        logger.info("  Wand: " + wandModel + " (provider: " + wandProvider + ")");
     }
 
     /**
-     * Get model ID as string (handles both int and string config values).
+     * Get model ID as string. Handles both int and string config values.
+     * FileConfiguration stores unquoted integers as Integer objects.
      */
     private String getModelIdAsString(FileConfiguration config, String path) {
-        if (config.isInt(path)) {
-            return String.valueOf(config.getInt(path));
+        Object raw = config.get(path);
+        if (raw instanceof Number number) {
+            return String.valueOf(number.intValue());
         }
         return config.getString(path, "1001");
     }
 
-    /**
-     * Apply model to an item stack.
-     * Provider is determined by model_id:
-     * - Integer (e.g., 1001) → Vanilla CustomModelData
-     * - "nexo:..." → Nexo
-     * - "itemsadder:..." → ItemsAdder
-     *
-     * @param item the item stack
-     * @param toolType the tool type
-     * @return true if model was applied successfully
-     */
     public boolean applyModel(ItemStack item, ToolType toolType) {
         FileConfiguration config = plugin.getConfigManager().getConfig();
-        String toolPath = "tools." + toolType.name().toLowerCase();
+        String toolName = toolType.name().toLowerCase();
+        String path = "tools." + toolName + ".model-id";
 
-        // Check if model_id is an integer (vanilla CustomModelData)
-        if (config.isInt(toolPath + ".model_id")) {
-            int customModelData = config.getInt(toolPath + ".model_id", 1001);
+        // Check if model-id is an integer (vanilla CustomModelData)
+        Object raw = config.get(path);
+        if (raw instanceof Number number) {
+            int customModelData = number.intValue();
             VanillaProvider vanillaProvider = new VanillaProvider(customModelData);
             return vanillaProvider.applyModel(item, toolType, "");
         }
 
-        // Otherwise, it's a string - check for provider prefix
-        String modelId = config.getString(toolPath + ".model_id", "");
+        String modelId = config.getString(path, "");
         if (modelId.isEmpty()) {
-            logger.warning("No model_id configured for " + toolType.name());
+            logger.warning("No model-id configured for " + toolType.name());
             return false;
         }
 
-        // Determine provider based on prefix
+        // Check if it's a plain integer written as a string
+        try {
+            int customModelData = Integer.parseInt(modelId);
+            VanillaProvider vanillaProvider = new VanillaProvider(customModelData);
+            return vanillaProvider.applyModel(item, toolType, "");
+        } catch (NumberFormatException ignored) {
+            // Not an integer, check for provider prefix
+        }
+
         ModelProvider provider;
         String actualModelId = modelId;
 
         if (modelId.toLowerCase().startsWith("model:")) {
             provider = new ItemModelProvider();
-            actualModelId = modelId.substring(6); // Remove "model:" prefix
+            actualModelId = modelId.substring(6);
 
             if (!provider.isAvailable()) {
                 logger.warning("Item Model provider requested but not available (requires Paper 1.21.4+) for " + toolType.name());
@@ -95,24 +86,26 @@ public class ModelProviderManager {
                 return false;
             }
         } else if (modelId.toLowerCase().startsWith("nexo:")) {
-            provider = new NexoProvider();
-            actualModelId = modelId.substring(5); // Remove "nexo:" prefix
+            actualModelId = modelId.substring(5);
 
+            // Nexo uses CustomModelData. For Item Model API, use the "model:" prefix instead.
+            provider = new NexoProvider(logger);
             if (!provider.isAvailable()) {
                 logger.warning("Nexo provider requested but Nexo plugin is not available for " + toolType.name());
                 return false;
             }
         } else if (modelId.toLowerCase().startsWith("itemsadder:")) {
-            provider = new ItemsAdderProvider();
-            actualModelId = modelId.substring(11); // Remove "itemsadder:" prefix
+            actualModelId = modelId.substring(11);
 
+            // ItemsAdder uses CustomModelData, not the modern Item Model API.
+            // Go straight to CustomModelData extraction (no Item Model API attempt).
+            provider = new ItemsAdderProvider(logger);
             if (!provider.isAvailable()) {
                 logger.warning("ItemsAdder provider requested but ItemsAdder plugin is not available for " + toolType.name());
                 return false;
             }
         } else {
-            // No recognized prefix - treat as vanilla integer
-            logger.warning("Unrecognized model_id format '" + modelId + "' for " + toolType.name());
+            logger.warning("Unrecognized model-id format '" + modelId + "' for " + toolType.name());
             logger.warning("Use an integer for vanilla CustomModelData, 'model:namespace:key' for Item Model, 'nexo:id' for Nexo, or 'itemsadder:id' for ItemsAdder");
             return false;
         }
@@ -127,16 +120,11 @@ public class ModelProviderManager {
         return success;
     }
 
-    /**
-     * Get provider name from model ID.
-     */
     private String getProviderName(String modelId) {
-        // Check if it's a number (vanilla CustomModelData)
         try {
             Integer.parseInt(modelId);
             return "Vanilla CustomModelData";
         } catch (NumberFormatException ignored) {
-            // Not a number, check prefix
         }
 
         if (modelId.toLowerCase().startsWith("model:")) {

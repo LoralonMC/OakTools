@@ -11,27 +11,55 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.HashSet;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
-/**
- * Handles recipe discovery for OakTools recipes.
- * Grants recipes to players when they obtain required materials (vanilla behavior).
- */
 public class RecipeDiscoveryListener implements Listener {
 
     private final OakTools plugin;
 
+    // Cached ingredient sets and recipe keys, rebuilt on reload
+    private Map<ToolType, Set<Material>> cachedIngredients = new EnumMap<>(ToolType.class);
+    private Map<ToolType, NamespacedKey> cachedRecipeKeys = new EnumMap<>(ToolType.class);
+    // All materials that appear in any recipe (for fast early-exit)
+    private Set<Material> allIngredientMaterials = EnumSet.noneOf(Material.class);
+
     public RecipeDiscoveryListener(OakTools plugin) {
         this.plugin = plugin;
+        rebuildCache();
     }
 
     /**
-     * Check and grant recipes when a player picks up an item.
-     * Schedule on next tick since the item isn't in inventory yet when this event fires.
+     * Rebuild cached ingredient sets from config. Called on construction and after reload.
      */
+    public void rebuildCache() {
+        Map<ToolType, Set<Material>> ingredients = new EnumMap<>(ToolType.class);
+        Map<ToolType, NamespacedKey> recipeKeys = new EnumMap<>(ToolType.class);
+        Set<Material> allMaterials = EnumSet.noneOf(Material.class);
+
+        for (ToolType toolType : ToolType.values()) {
+            String toolName = toolType.name().toLowerCase();
+
+            if (!plugin.getConfigManager().getConfig().getBoolean("tools." + toolName + ".recipe.enabled", true)) {
+                continue;
+            }
+
+            Set<Material> toolIngredients = loadRecipeIngredients(toolName);
+            if (!toolIngredients.isEmpty()) {
+                ingredients.put(toolType, toolIngredients);
+                recipeKeys.put(toolType, new NamespacedKey(plugin, toolName + "_recipe"));
+                allMaterials.addAll(toolIngredients);
+            }
+        }
+
+        this.cachedIngredients = ingredients;
+        this.cachedRecipeKeys = recipeKeys;
+        this.allIngredientMaterials = allMaterials;
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onItemPickup(EntityPickupItemEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
@@ -40,15 +68,15 @@ public class RecipeDiscoveryListener implements Listener {
 
         Material pickedUpMaterial = event.getItem().getItemStack().getType();
 
-        // Check on next tick after item is added to inventory
+        if (!allIngredientMaterials.contains(pickedUpMaterial)) {
+            return;
+        }
+
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             checkAndGrantRecipes(player, pickedUpMaterial);
         });
     }
 
-    /**
-     * Check and grant recipes when a player crafts an item.
-     */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraft(CraftItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) {
@@ -56,37 +84,27 @@ public class RecipeDiscoveryListener implements Listener {
         }
 
         Material craftedMaterial = event.getRecipe().getResult().getType();
+
+        if (!allIngredientMaterials.contains(craftedMaterial)) {
+            return;
+        }
+
         checkAndGrantRecipes(player, craftedMaterial);
     }
 
-    /**
-     * Check if the player should receive any recipes based on the material they obtained.
-     *
-     * @param player the player
-     * @param material the material they obtained
-     */
     private void checkAndGrantRecipes(Player player, Material material) {
-        for (ToolType toolType : ToolType.values()) {
-            String toolName = toolType.name().toLowerCase();
-
-            // Check if recipe is enabled
-            if (!plugin.getConfigManager().getConfig().getBoolean("tools." + toolName + ".recipe.enabled", true)) {
+        for (var entry : cachedIngredients.entrySet()) {
+            NamespacedKey key = cachedRecipeKeys.get(entry.getKey());
+            if (key == null) {
                 continue;
             }
 
-            NamespacedKey key = new NamespacedKey(plugin, toolName + "_recipe");
-
-            // Skip if player already has this recipe
             if (player.hasDiscoveredRecipe(key)) {
                 continue;
             }
 
-            // Get recipe ingredients
-            Set<Material> requiredMaterials = getRecipeIngredients(toolName);
-
-            // If the material they picked up/crafted is used in this recipe, check if they should get it
+            Set<Material> requiredMaterials = entry.getValue();
             if (requiredMaterials.contains(material)) {
-                // Check if player has all required materials
                 if (playerHasAllMaterials(player, requiredMaterials)) {
                     player.discoverRecipe(key);
                 }
@@ -94,14 +112,8 @@ public class RecipeDiscoveryListener implements Listener {
         }
     }
 
-    /**
-     * Get all unique materials used in a tool's recipe.
-     *
-     * @param toolName the tool name
-     * @return set of required materials
-     */
-    private Set<Material> getRecipeIngredients(String toolName) {
-        Set<Material> materials = new HashSet<>();
+    private Set<Material> loadRecipeIngredients(String toolName) {
+        Set<Material> materials = EnumSet.noneOf(Material.class);
 
         ConfigurationSection ingredientsSection = plugin.getConfigManager().getConfig()
                 .getConfigurationSection("tools." + toolName + ".recipe.ingredients");
@@ -113,7 +125,6 @@ public class RecipeDiscoveryListener implements Listener {
                     try {
                         materials.add(Material.valueOf(materialName));
                     } catch (IllegalArgumentException ignored) {
-                        // Invalid material, skip
                     }
                 }
             }
@@ -122,13 +133,6 @@ public class RecipeDiscoveryListener implements Listener {
         return materials;
     }
 
-    /**
-     * Check if a player has all the required materials in their inventory.
-     *
-     * @param player the player
-     * @param requiredMaterials the required materials
-     * @return true if player has all materials
-     */
     private boolean playerHasAllMaterials(Player player, Set<Material> requiredMaterials) {
         for (Material material : requiredMaterials) {
             if (!player.getInventory().contains(material)) {

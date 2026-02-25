@@ -4,13 +4,18 @@ import dev.oakheart.oaktools.commands.OakToolsCommand;
 import dev.oakheart.oaktools.config.ConfigManager;
 import dev.oakheart.oaktools.integration.CoreProtectLogger;
 import dev.oakheart.oaktools.integration.ModelProviderManager;
+import dev.oakheart.oaktools.integration.VulcanHook;
 import dev.oakheart.oaktools.items.ItemFactory;
 import dev.oakheart.oaktools.listeners.*;
+import dev.oakheart.oaktools.managers.WandHistoryManager;
+import dev.oakheart.oaktools.managers.WandPreviewManager;
+import dev.oakheart.oaktools.message.MessageManager;
 import dev.oakheart.oaktools.recipes.RecipeManager;
 import dev.oakheart.oaktools.services.*;
-import dev.oakheart.oaktools.util.Constants;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.logging.Level;
 
 public final class OakTools extends JavaPlugin {
 
@@ -25,153 +30,162 @@ public final class OakTools extends JavaPlugin {
     // Services
     private DurabilityService durabilityService;
     private DisplayService displayService;
-    private MessageService messageService;
+    private MessageManager messageManager;
     private ProtectionService protectionService;
+
+    // Listeners (stored for reload callbacks)
+    private RecipeDiscoveryListener recipeDiscoveryListener;
+
+    // Wand managers
+    private WandHistoryManager wandHistoryManager;
+    private WandPreviewManager wandPreviewManager;
 
     // Integration
     private CoreProtectLogger coreProtectLogger;
+    private VulcanHook vulcanHook;
 
     @Override
     public void onEnable() {
-        getLogger().info("Enabling OakTools...");
+        try {
+            initializeComponents();
+            registerListeners();
+            registerCommands();
+            initializeMetrics();
+            scheduleRecipeRegistration();
+            startPreview();
 
-        // Initialize PDC keys
-        Constants.init(this);
-
-        // Initialize configuration
-        this.configManager = new ConfigManager(this);
-        configManager.load();
-
-        // Initialize managers
-        this.modelProviderManager = new ModelProviderManager(this);
-        modelProviderManager.initialize();
-
-        this.recipeManager = new RecipeManager(this);
-
-        // Initialize factories
-        this.itemFactory = new ItemFactory(this);
-
-        // Initialize services
-        this.durabilityService = new DurabilityService(this);
-        this.displayService = new DisplayService(this);
-        this.messageService = new MessageService(this);
-        this.protectionService = new ProtectionService(this);
-
-        // Initialize integration
-        this.coreProtectLogger = new CoreProtectLogger(this);
-        coreProtectLogger.initialize();
-
-        // Initialize metrics (bStats)
-        initializeMetrics();
-
-        // Register listeners
-        registerListeners();
-
-        // Register commands
-        registerCommands();
-
-        // Register recipes (delayed if using external model providers)
-        scheduleRecipeRegistration();
-
-        getLogger().info("OakTools enabled successfully!");
+            getLogger().info("OakTools enabled successfully!");
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "Failed to enable OakTools", e);
+            getServer().getPluginManager().disablePlugin(this);
+        }
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("Disabling OakTools...");
-
-        // Unregister recipes
+        if (wandPreviewManager != null) {
+            wandPreviewManager.stop();
+        }
         if (recipeManager != null) {
             recipeManager.unregisterRecipes();
         }
-
         getLogger().info("OakTools disabled.");
     }
 
-    /**
-     * Schedule recipe registration based on model provider type.
-     * If using external providers (Nexo/ItemsAdder), delay registration to ensure they're fully loaded.
-     */
-    private void scheduleRecipeRegistration() {
-        boolean usesExternalProvider = false;
+    private void initializeComponents() {
+        configManager = new ConfigManager(this);
+        configManager.load();
 
-        // Check if any tool uses external model providers
-        String fileModel = configManager.getConfig().getString("tools.file.model_id", "");
-        String trowelModel = configManager.getConfig().getString("tools.trowel.model_id", "");
+        modelProviderManager = new ModelProviderManager(this);
+        modelProviderManager.initialize();
+        recipeManager = new RecipeManager(this);
 
-        if (fileModel.toLowerCase().startsWith("nexo:") || fileModel.toLowerCase().startsWith("itemsadder:") ||
-            trowelModel.toLowerCase().startsWith("nexo:") || trowelModel.toLowerCase().startsWith("itemsadder:")) {
-            usesExternalProvider = true;
-        }
+        itemFactory = new ItemFactory(this);
 
-        if (usesExternalProvider) {
-            // Delay recipe registration by 1 second (20 ticks) to allow external providers to load
-            getLogger().info("External model provider detected, delaying recipe registration...");
-            getServer().getScheduler().runTaskLater(this, () -> {
-                recipeManager.registerRecipes();
-                getLogger().info("Recipes registered with external model provider");
-            }, 20L);
-        } else {
-            // Register immediately for vanilla CustomModelData
-            recipeManager.registerRecipes();
+        durabilityService = new DurabilityService(this);
+        displayService = new DisplayService(this);
+        messageManager = new MessageManager(this);
+        protectionService = new ProtectionService(this);
+
+        wandHistoryManager = new WandHistoryManager(this);
+        wandPreviewManager = new WandPreviewManager(this);
+
+        coreProtectLogger = new CoreProtectLogger(this);
+        coreProtectLogger.initialize();
+
+        if (getServer().getPluginManager().getPlugin("Vulcan") != null) {
+            vulcanHook = new VulcanHook(this);
+            vulcanHook.register();
         }
     }
 
-    /**
-     * Register all event listeners.
-     */
     private void registerListeners() {
         var pluginManager = getServer().getPluginManager();
 
         pluginManager.registerEvents(new FileListener(this), this);
         pluginManager.registerEvents(new TrowelListener(this), this);
+        pluginManager.registerEvents(new WandListener(this, wandHistoryManager), this);
+        pluginManager.registerEvents(wandHistoryManager, this);
+        pluginManager.registerEvents(wandPreviewManager, this);
         pluginManager.registerEvents(new AnvilListener(this), this);
         pluginManager.registerEvents(new CraftingListener(this), this);
-        pluginManager.registerEvents(new RecipeDiscoveryListener(this), this);
+        recipeDiscoveryListener = new RecipeDiscoveryListener(this);
+        pluginManager.registerEvents(recipeDiscoveryListener, this);
         pluginManager.registerEvents(new MendingListener(this), this);
-
-        getLogger().info("Registered listeners");
     }
 
-    /**
-     * Register all commands.
-     */
     private void registerCommands() {
-        OakToolsCommand commandExecutor = new OakToolsCommand(this);
-
-        var command = getCommand("oaktools");
-        if (command != null) {
-            command.setExecutor(commandExecutor);
-            command.setTabCompleter(commandExecutor);
-            getLogger().info("Registered commands");
-        } else {
-            getLogger().warning("Failed to register /oaktools command!");
-        }
+        new OakToolsCommand(this).register();
     }
 
-    /**
-     * Initialize bStats metrics if enabled in config.
-     */
     private void initializeMetrics() {
-        if (!configManager.getConfig().getBoolean("metrics.enabled", true)) {
-            getLogger().info("Metrics are disabled in config");
+        if (!configManager.isMetricsEnabled()) {
+            getLogger().info("Metrics are disabled in config.");
             return;
         }
 
         try {
-            // Plugin ID from bstats.org
-            int pluginId = 27955;
-
-            Metrics metrics = new Metrics(this, pluginId);
-
-            getLogger().info("Metrics initialized (bStats)");
-
+            new Metrics(this, 27955);
         } catch (Exception e) {
             getLogger().warning("Failed to initialize metrics: " + e.getMessage());
         }
     }
 
-    // Getters for managers, factories, and services
+    private void scheduleRecipeRegistration() {
+        boolean usesExternalProvider = false;
+
+        String fileModel = configManager.getConfig().getString("tools.file.model-id", "");
+        String trowelModel = configManager.getConfig().getString("tools.trowel.model-id", "");
+        String wandModel = configManager.getConfig().getString("tools.wand.model-id", "");
+
+        if (fileModel.toLowerCase().startsWith("nexo:") || fileModel.toLowerCase().startsWith("itemsadder:") ||
+            trowelModel.toLowerCase().startsWith("nexo:") || trowelModel.toLowerCase().startsWith("itemsadder:") ||
+            wandModel.toLowerCase().startsWith("nexo:") || wandModel.toLowerCase().startsWith("itemsadder:")) {
+            usesExternalProvider = true;
+        }
+
+        if (usesExternalProvider) {
+            getLogger().info("External model provider detected, delaying recipe registration...");
+            getServer().getScheduler().runTaskLater(this, () -> {
+                recipeManager.registerRecipes();
+                getLogger().info("Recipes registered with external model provider.");
+            }, 20L);
+        } else {
+            recipeManager.registerRecipes();
+        }
+    }
+
+    private void startPreview() {
+        if (wandPreviewManager != null) {
+            wandPreviewManager.start();
+        }
+    }
+
+    /**
+     * Re-initialize components that depend on config values after a reload.
+     * Called from OakToolsCommand after config reload.
+     */
+    public void refreshAfterReload() {
+        modelProviderManager.initialize();
+        coreProtectLogger.initialize();
+        if (recipeDiscoveryListener != null) {
+            recipeDiscoveryListener.rebuildCache();
+        }
+        if (wandPreviewManager != null) {
+            wandPreviewManager.restart();
+        }
+    }
+
+    /**
+     * Log a debug message if debug mode is enabled.
+     */
+    public void debug(String message) {
+        if (configManager.isDebug()) {
+            getLogger().info(message);
+        }
+    }
+
+    // Getters
 
     public ConfigManager getConfigManager() {
         return configManager;
@@ -197,8 +211,8 @@ public final class OakTools extends JavaPlugin {
         return displayService;
     }
 
-    public MessageService getMessageService() {
-        return messageService;
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
 
     public ProtectionService getProtectionService() {
@@ -207,5 +221,17 @@ public final class OakTools extends JavaPlugin {
 
     public CoreProtectLogger getCoreProtectLogger() {
         return coreProtectLogger;
+    }
+
+    public WandHistoryManager getWandHistoryManager() {
+        return wandHistoryManager;
+    }
+
+    public WandPreviewManager getWandPreviewManager() {
+        return wandPreviewManager;
+    }
+
+    public VulcanHook getVulcanHook() {
+        return vulcanHook;
     }
 }

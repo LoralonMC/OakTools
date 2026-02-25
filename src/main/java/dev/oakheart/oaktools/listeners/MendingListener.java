@@ -2,6 +2,7 @@ package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.util.Constants;
+import org.bukkit.Bukkit;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,8 +27,11 @@ import java.util.UUID;
 public class MendingListener implements Listener {
 
     private final OakTools plugin;
+
+    private record MendingState(int xpToBlock, int expiryTick) {}
+
     // Track which players are currently mending OakTools items to prevent XP gain
-    private final Map<UUID, Integer> activeMending = new HashMap<>();
+    private final Map<UUID, MendingState> activeMending = new HashMap<>();
 
     public MendingListener(OakTools plugin) {
         this.plugin = plugin;
@@ -38,20 +42,28 @@ public class MendingListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        // Check if this player is currently mending an OakTools item
-        if (activeMending.containsKey(uuid)) {
-            int xpToBlock = activeMending.get(uuid);
-            int xpGain = event.getAmount();
+        MendingState state = activeMending.get(uuid);
+        if (state == null) {
+            return;
+        }
 
-            if (xpGain <= xpToBlock) {
-                // Block all of this XP gain
-                event.setAmount(0);
-                activeMending.put(uuid, xpToBlock - xpGain);
-            } else {
-                // Block partial XP gain
-                event.setAmount(xpGain - xpToBlock);
-                activeMending.remove(uuid);
-            }
+        // Check if the mending state has expired
+        if (Bukkit.getCurrentTick() > state.expiryTick()) {
+            activeMending.remove(uuid);
+            return;
+        }
+
+        int xpToBlock = state.xpToBlock();
+        int xpGain = event.getAmount();
+
+        if (xpGain <= xpToBlock) {
+            // Block all of this XP gain
+            event.setAmount(0);
+            activeMending.put(uuid, new MendingState(xpToBlock - xpGain, state.expiryTick()));
+        } else {
+            // Block partial XP gain
+            event.setAmount(xpGain - xpToBlock);
+            activeMending.remove(uuid);
         }
     }
 
@@ -104,11 +116,13 @@ public class MendingListener implements Listener {
         int xpToConsume = (int) Math.ceil((double) actualRepair / 2.0);
         xpToConsume = Math.min(xpToConsume, xpAmount); // Don't consume more than available
 
-        // Track that this player is mending an OakTools item
-        // This will be checked in PlayerExpChangeEvent to prevent XP gain
+        // Track that this player is mending an OakTools item with tick-based expiry
         UUID uuid = player.getUniqueId();
-        int currentBlocked = activeMending.getOrDefault(uuid, 0);
-        activeMending.put(uuid, currentBlocked + xpToConsume);
+        int currentTick = Bukkit.getCurrentTick();
+        int expiryTick = currentTick + 5;
+        MendingState existing = activeMending.get(uuid);
+        int totalXpToBlock = xpToConsume + (existing != null && currentTick <= existing.expiryTick() ? existing.xpToBlock() : 0);
+        activeMending.put(uuid, new MendingState(totalXpToBlock, expiryTick));
 
         // Update our custom durability
         pdc.set(Constants.DURABILITY, PersistentDataType.INTEGER, newDamage);
@@ -131,12 +145,6 @@ public class MendingListener implements Listener {
 
         // Cancel the event to prevent vanilla from also processing it
         event.setCancelled(true);
-
-        // Schedule cleanup of the activeMending tracker after a short delay
-        // This ensures we don't block XP forever if something goes wrong
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            activeMending.remove(uuid);
-        }, 5L);
     }
 
     /**

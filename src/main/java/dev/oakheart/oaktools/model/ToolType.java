@@ -4,8 +4,15 @@ package dev.oakheart.oaktools.model;
  * Represents the type of OakTools tool.
  */
 public enum ToolType {
-    FILE,
-    TROWEL;
+    FILE("File"),
+    TROWEL("Trowel"),
+    WAND("Builder's Wand");
+
+    private final String displayName;
+
+    ToolType(String displayName) {
+        this.displayName = displayName;
+    }
 
     /**
      * Safely parse a ToolType from a string.
@@ -27,9 +34,9 @@ public enum ToolType {
     /**
      * Get the display name of this tool type.
      *
-     * @return the display name (capitalized)
+     * @return the display name
      */
     public String getDisplayName() {
-        return name().charAt(0) + name().substring(1).toLowerCase();
+        return displayName;
     }
 }

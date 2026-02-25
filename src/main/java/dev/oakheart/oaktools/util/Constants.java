@@ -1,7 +1,6 @@
 package dev.oakheart.oaktools.util;
 
 import org.bukkit.NamespacedKey;
-import org.bukkit.plugin.Plugin;
 
 /**
  * Central constants and PDC keys for OakTools.
@@ -11,29 +10,11 @@ public class Constants {
     // Namespace
     public static final String NAMESPACE = "oaktools";
 
-    // Init guard
-    private static boolean initialized = false;
-
-    // PDC Keys (initialized in init())
-    public static NamespacedKey TOOL_TYPE;
-    public static NamespacedKey DURABILITY;
-    public static NamespacedKey MAX_DURABILITY;
-    public static NamespacedKey FEED_SOURCE;
-
-    /**
-     * Initialize all NamespacedKeys. Must be called on plugin enable.
-     * Guarded against double initialization.
-     *
-     * @param plugin the plugin instance
-     */
-    public static void init(Plugin plugin) {
-        if (initialized) {
-            return;
-        }
-        TOOL_TYPE = new NamespacedKey(plugin, "tool_type");
-        DURABILITY = new NamespacedKey(plugin, "dur");
-        MAX_DURABILITY = new NamespacedKey(plugin, "max_dur");
-        FEED_SOURCE = new NamespacedKey(plugin, "feed_source");
-        initialized = true;
-    }
+    // PDC Keys
+    public static final NamespacedKey TOOL_TYPE = NamespacedKey.fromString("oaktools:tool_type");
+    public static final NamespacedKey DURABILITY = NamespacedKey.fromString("oaktools:dur");
+    public static final NamespacedKey MAX_DURABILITY = NamespacedKey.fromString("oaktools:max_dur");
+    public static final NamespacedKey FEED_SOURCE = NamespacedKey.fromString("oaktools:feed_source");
+    public static final NamespacedKey WAND_MODE = NamespacedKey.fromString("oaktools:wand_mode");
+    public static final NamespacedKey PREVIEW_ENTITY = NamespacedKey.fromString("oaktools:preview");
 }

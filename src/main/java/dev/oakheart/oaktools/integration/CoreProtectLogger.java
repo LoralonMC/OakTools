@@ -8,9 +8,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
-/**
- * Handles async logging to CoreProtect for tool actions.
- */
 public class CoreProtectLogger {
 
     private final OakTools plugin;
@@ -22,18 +19,15 @@ public class CoreProtectLogger {
         this.available = false;
     }
 
-    /**
-     * Initialize CoreProtect integration.
-     */
     public void initialize() {
-        if (!plugin.getConfigManager().getConfig().getBoolean("integration.coreprotect.enabled", true)) {
+        if (!plugin.getConfigManager().isCoreProtectEnabled()) {
             plugin.getLogger().info("CoreProtect integration is disabled in config");
             return;
         }
 
         var coreProtectPlugin = Bukkit.getPluginManager().getPlugin("CoreProtect");
         if (!(coreProtectPlugin instanceof CoreProtect coreProtect)) {
-            plugin.getLogger().info("CoreProtect not found - logging disabled");
+            plugin.getLogger().info("CoreProtect not found — logging disabled");
             return;
         }
 
@@ -47,23 +41,12 @@ public class CoreProtectLogger {
         }
     }
 
-    /**
-     * Log a File tool edit (block state change).
-     * Logs as break (old state) + place (new state) for rollback support.
-     *
-     * @param player the player
-     * @param block the block
-     * @param oldData the old block data
-     * @param newData the new block data
-     */
     public void logFileEdit(Player player, Block block, BlockData oldData, BlockData newData) {
-        if (!available || !plugin.getConfigManager().getConfig()
-                .getBoolean("integration.coreprotect.log_file_changes", true)) {
+        if (!available || !plugin.getConfigManager().isLogFileChanges()) {
             return;
         }
 
         try {
-            // Log break (old state)
             coreProtectAPI.logRemoval(
                     player.getName(),
                     block.getLocation(),
@@ -71,7 +54,6 @@ public class CoreProtectLogger {
                     oldData
             );
 
-            // Log place (new state)
             coreProtectAPI.logPlacement(
                     player.getName(),
                     block.getLocation(),
@@ -83,16 +65,8 @@ public class CoreProtectLogger {
         }
     }
 
-    /**
-     * Log a Trowel placement.
-     *
-     * @param player the player
-     * @param block the block
-     * @param blockData the placed block data
-     */
     public void logTrowelPlacement(Player player, Block block, BlockData blockData) {
-        if (!available || !plugin.getConfigManager().getConfig()
-                .getBoolean("integration.coreprotect.log_trowel_placements", true)) {
+        if (!available || !plugin.getConfigManager().isLogTrowelPlacements()) {
             return;
         }
 
@@ -108,11 +82,40 @@ public class CoreProtectLogger {
         }
     }
 
-    /**
-     * Check if CoreProtect integration is available.
-     *
-     * @return true if available
-     */
+    public void logWandPlacement(Player player, Block block, BlockData blockData) {
+        if (!available || !plugin.getConfigManager().isLogWandPlacements()) {
+            return;
+        }
+
+        try {
+            coreProtectAPI.logPlacement(
+                    player.getName(),
+                    block.getLocation(),
+                    blockData.getMaterial(),
+                    blockData
+            );
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to log Wand placement to CoreProtect: " + e.getMessage());
+        }
+    }
+
+    public void logWandRemoval(Player player, Block block, BlockData blockData) {
+        if (!available || !plugin.getConfigManager().isLogWandPlacements()) {
+            return;
+        }
+
+        try {
+            coreProtectAPI.logRemoval(
+                    player.getName(),
+                    block.getLocation(),
+                    blockData.getMaterial(),
+                    blockData
+            );
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to log Wand removal to CoreProtect: " + e.getMessage());
+        }
+    }
+
     public boolean isAvailable() {
         return available;
     }

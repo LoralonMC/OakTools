@@ -3,10 +3,12 @@ package dev.oakheart.oaktools.services;
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.FeedSource;
 import dev.oakheart.oaktools.model.ToolType;
+import dev.oakheart.oaktools.model.WandMode;
 import dev.oakheart.oaktools.util.Constants;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.configuration.file.FileConfiguration;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -15,9 +17,6 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Handles tool display names, lore, and MiniMessage formatting with placeholders.
- */
 public class DisplayService {
 
     private final OakTools plugin;
@@ -28,50 +27,30 @@ public class DisplayService {
         this.miniMessage = MiniMessage.miniMessage();
     }
 
-    /**
-     * Set the initial display name and lore when creating a new tool.
-     * This sets the name once - after creation, players can rename freely.
-     *
-     * @param item the tool item
-     * @param toolType the tool type
-     */
     public void setInitialDisplay(ItemStack item, ToolType toolType) {
         if (!plugin.getItemFactory().isTool(item)) {
             return;
         }
-
-        FileConfiguration config = plugin.getConfigManager().getConfig();
 
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
             return;
         }
 
-        // Check if display is enabled for this specific tool
-        String toolPath = "tools." + toolType.name().toLowerCase() + ".display";
-        if (!config.getBoolean(toolPath + ".enabled", true)) {
+        if (!plugin.getConfigManager().isDisplayEnabled(toolType)) {
             return;
         }
 
-        // Set initial display name and lore
         updateDisplayName(item, meta, toolType);
         updateLore(item, meta, toolType);
 
         item.setItemMeta(meta);
     }
 
-    /**
-     * Update the display name and lore of a tool.
-     * Only updates lore - names are set once on creation and never changed.
-     *
-     * @param item the tool item
-     */
     public void updateDisplay(ItemStack item) {
         if (!plugin.getItemFactory().isTool(item)) {
             return;
         }
-
-        FileConfiguration config = plugin.getConfigManager().getConfig();
 
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
@@ -83,54 +62,33 @@ public class DisplayService {
             return;
         }
 
-        // Check if display is enabled for this specific tool
-        String toolPath = "tools." + toolType.name().toLowerCase() + ".display";
-        if (!config.getBoolean(toolPath + ".enabled", true)) {
+        if (!plugin.getConfigManager().isDisplayEnabled(toolType)) {
             return;
         }
 
-        // Never update display name - set once on creation, players can rename freely
-        // Always update lore (contains dynamic info like feed source, durability placeholders)
         updateLore(item, meta, toolType);
 
         item.setItemMeta(meta);
     }
 
-    /**
-     * Update the display name of a tool.
-     *
-     * @param item the tool item
-     * @param meta the item meta
-     * @param toolType the tool type
-     */
     private void updateDisplayName(ItemStack item, ItemMeta meta, ToolType toolType) {
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-        String path = "tools." + toolType.name().toLowerCase() + ".display.name";
-        String nameTemplate = config.getString(path, "<white>" + toolType.getDisplayName() + "</white>");
+        String nameTemplate = plugin.getConfigManager().getDisplayNameTemplate(toolType);
 
-        String nameWithPlaceholders = replacePlaceholders(nameTemplate, item);
-        Component nameComponent = miniMessage.deserialize(nameWithPlaceholders)
+        TagResolver[] resolvers = buildPlaceholderResolvers(item);
+        Component nameComponent = miniMessage.deserialize(nameTemplate, resolvers)
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
 
-        meta.displayName(nameComponent);
+        meta.itemName(nameComponent);
     }
 
-    /**
-     * Update the lore of a tool.
-     *
-     * @param item the tool item
-     * @param meta the item meta
-     * @param toolType the tool type
-     */
     private void updateLore(ItemStack item, ItemMeta meta, ToolType toolType) {
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-        String path = "tools." + toolType.name().toLowerCase() + ".display.lore";
-        List<String> loreTemplate = config.getStringList(path);
+        List<String> loreTemplate = plugin.getConfigManager().getDisplayLoreTemplate(toolType);
+
+        TagResolver[] resolvers = buildPlaceholderResolvers(item);
 
         List<Component> loreComponents = new ArrayList<>();
         for (String line : loreTemplate) {
-            String lineWithPlaceholders = replacePlaceholders(line, item);
-            Component lineComponent = miniMessage.deserialize(lineWithPlaceholders)
+            Component lineComponent = miniMessage.deserialize(line, resolvers)
                     .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
             loreComponents.add(lineComponent);
         }
@@ -138,26 +96,20 @@ public class DisplayService {
         meta.lore(loreComponents);
     }
 
-    /**
-     * Replace placeholders in a string with tool data.
-     *
-     * @param text the text with placeholders
-     * @param item the tool item
-     * @return the text with placeholders replaced
-     */
-    private String replacePlaceholders(String text, ItemStack item) {
+    private TagResolver[] buildPlaceholderResolvers(ItemStack item) {
+        List<TagResolver> resolvers = new ArrayList<>();
+
         if (!plugin.getItemFactory().isTool(item)) {
-            return text;
+            return resolvers.toArray(TagResolver[]::new);
         }
 
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
-            return text;
+            return resolvers.toArray(TagResolver[]::new);
         }
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
 
-        // Get durability data
         Integer currentDamage = pdc.get(Constants.DURABILITY, PersistentDataType.INTEGER);
         Integer maxDurability = pdc.get(Constants.MAX_DURABILITY, PersistentDataType.INTEGER);
 
@@ -165,67 +117,46 @@ public class DisplayService {
             int remaining = maxDurability - currentDamage;
             int percent = (int) Math.round(((double) remaining / maxDurability) * 100);
 
-            text = text.replace("%cur%", String.valueOf(currentDamage));
-            text = text.replace("%max%", String.valueOf(maxDurability));
-            text = text.replace("%remaining%", String.valueOf(remaining));
-            text = text.replace("%percent%", String.valueOf(percent));
+            resolvers.add(Placeholder.unparsed("cur", String.valueOf(currentDamage)));
+            resolvers.add(Placeholder.unparsed("max", String.valueOf(maxDurability)));
+            resolvers.add(Placeholder.unparsed("remaining", String.valueOf(remaining)));
+            resolvers.add(Placeholder.unparsed("percent", String.valueOf(percent)));
         }
 
-        // Get tool type
         ToolType toolType = plugin.getItemFactory().getToolType(item);
         if (toolType != null) {
-            text = text.replace("%tool%", toolType.getDisplayName());
+            resolvers.add(Placeholder.unparsed("tool", toolType.getDisplayName()));
         }
 
-        // Get feed source (Trowel only)
         String feedSourceString = pdc.get(Constants.FEED_SOURCE, PersistentDataType.STRING);
         if (feedSourceString != null) {
             FeedSource feedSource = FeedSource.fromString(feedSourceString);
-            text = text.replace("%feed_source%", getFeedSourceDisplayName(feedSource));
+            resolvers.add(Placeholder.unparsed("feed_source", getFeedSourceDisplayName(feedSource)));
         }
 
-        return text;
+        String wandModeString = pdc.get(Constants.WAND_MODE, PersistentDataType.STRING);
+        if (wandModeString != null) {
+            WandMode wandMode = WandMode.fromString(wandModeString);
+            resolvers.add(Placeholder.unparsed("wand_mode", getWandModeDisplayName(wandMode)));
+        }
+
+        return resolvers.toArray(TagResolver[]::new);
     }
 
-    /**
-     * Get the display name for a feed source from config.
-     *
-     * @param feedSource the feed source
-     * @return the localized display name
-     */
     public String getFeedSourceDisplayName(FeedSource feedSource) {
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-        String configKey = switch (feedSource) {
-            case HOTBAR -> "messages.feed_sources.hotbar";
-            case ROW_1 -> "messages.feed_sources.row_1";
-            case ROW_2 -> "messages.feed_sources.row_2";
-            case ROW_3 -> "messages.feed_sources.row_3";
-        };
-
-        // Get from config with fallback to default
-        return config.getString(configKey, feedSource.getDisplayName());
+        return plugin.getConfigManager().getFeedSourceDisplayName(feedSource);
     }
 
-    /**
-     * Parse a MiniMessage string into a Component.
-     *
-     * @param text the MiniMessage text
-     * @return the Component
-     */
+    public String getWandModeDisplayName(WandMode wandMode) {
+        return plugin.getConfigManager().getWandModeDisplayName(wandMode);
+    }
+
     public Component parse(String text) {
         return miniMessage.deserialize(text);
     }
 
-    /**
-     * Parse a MiniMessage string with placeholders into a Component.
-     *
-     * @param text the MiniMessage text
-     * @param item the tool item (for placeholders)
-     * @return the Component
-     */
     public Component parseWithPlaceholders(String text, ItemStack item) {
-        String replaced = replacePlaceholders(text, item);
-        return miniMessage.deserialize(replaced);
+        TagResolver[] resolvers = buildPlaceholderResolvers(item);
+        return miniMessage.deserialize(text, resolvers);
     }
-
 }

@@ -3,14 +3,25 @@ package dev.oakheart.oaktools.integration;
 import dev.lone.itemsadder.api.CustomStack;
 import dev.oakheart.oaktools.model.ToolType;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * ItemsAdder model provider.
- * Applies CustomModelData from ItemsAdder items to our tools.
+ * Detects whether the ItemsAdder item uses Item Model or CustomModelData and applies accordingly.
  */
 public class ItemsAdderProvider implements ModelProvider {
+
+    private final Logger logger;
+
+    public ItemsAdderProvider(Logger logger) {
+        this.logger = logger;
+    }
 
     @Override
     public String getName() {
@@ -29,48 +40,52 @@ public class ItemsAdderProvider implements ModelProvider {
 
     @Override
     public boolean applyModel(ItemStack item, ToolType toolType, String modelId) {
-        // ItemsAdder uses namespace:id format (e.g., "oaktools:file")
-        // We get the CustomModelData from the ItemsAdder item and apply it to our item
-
         try {
-            // Get the ItemsAdder custom item
             CustomStack customStack = CustomStack.getInstance(modelId);
 
             if (customStack == null) {
-                Bukkit.getLogger().warning("[OakTools] ItemsAdder item '" + modelId + "' not found. " +
+                logger.warning("[OakTools] ItemsAdder item '" + modelId + "' not found. " +
                         "Make sure you have defined this item in your ItemsAdder config.");
                 return false;
             }
 
-            // Get the ItemsAdder item's ItemStack
             ItemStack iaItem = customStack.getItemStack();
             if (iaItem == null || !iaItem.hasItemMeta()) {
                 return false;
             }
 
-            // Extract CustomModelData from the ItemsAdder item
-            ItemMeta iaMeta = iaItem.getItemMeta();
-            if (!iaMeta.hasCustomModelData()) {
-                Bukkit.getLogger().warning("[OakTools] ItemsAdder item '" + modelId + "' has no CustomModelData. " +
+            ItemMeta sourceMeta = iaItem.getItemMeta();
+            ItemMeta targetMeta = item.getItemMeta();
+            if (targetMeta == null) {
+                return false;
+            }
+
+            // Check if the ItemsAdder item uses the modern Item Model system
+            if (sourceMeta.hasItemModel()) {
+                NamespacedKey itemModel = sourceMeta.getItemModel();
+                targetMeta.setItemModel(itemModel);
+                item.setItemMeta(targetMeta);
+                return true;
+            }
+
+            // Fall back to CustomModelData
+            CustomModelDataComponent sourceCmd = sourceMeta.getCustomModelDataComponent();
+            List<Float> floats = sourceCmd.getFloats();
+            if (floats.isEmpty()) {
+                logger.warning("[OakTools] ItemsAdder item '" + modelId + "' has no Item Model or CustomModelData. " +
                         "Make sure it's properly configured in your resource pack.");
                 return false;
             }
 
-            int customModelData = iaMeta.getCustomModelData();
-
-            // Apply it to our item
-            ItemMeta meta = item.getItemMeta();
-            if (meta == null) {
-                return false;
-            }
-
-            meta.setCustomModelData(customModelData);
-            item.setItemMeta(meta);
+            CustomModelDataComponent targetCmd = targetMeta.getCustomModelDataComponent();
+            targetCmd.setFloats(floats);
+            targetMeta.setCustomModelDataComponent(targetCmd);
+            item.setItemMeta(targetMeta);
 
             return true;
 
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[OakTools] Failed to apply ItemsAdder model '" + modelId + "': " + e.getMessage());
+            logger.warning("[OakTools] Failed to apply ItemsAdder model '" + modelId + "': " + e.getMessage());
             return false;
         }
     }

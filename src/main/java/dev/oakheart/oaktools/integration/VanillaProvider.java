@@ -3,6 +3,9 @@ package dev.oakheart.oaktools.integration;
 import dev.oakheart.oaktools.model.ToolType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+
+import java.util.List;
 
 /**
  * Vanilla CustomModelData provider (always available as fallback).
@@ -32,7 +35,9 @@ public class VanillaProvider implements ModelProvider {
             return false;
         }
 
-        meta.setCustomModelData(customModelData);
+        CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+        cmd.setFloats(List.of((float) customModelData));
+        meta.setCustomModelDataComponent(cmd);
         item.setItemMeta(meta);
         return true;
     }

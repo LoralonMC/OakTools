@@ -1,11 +1,13 @@
 package dev.oakheart.oaktools.util;
 
+import dev.oakheart.oaktools.config.ConfigManager;
 import dev.oakheart.oaktools.model.FeedSource;
 import org.bukkit.Material;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
@@ -157,6 +159,45 @@ public class InventoryUtil {
         }
 
         return true;
+    }
+
+    /**
+     * Count total amount of a specific material in a player's inventory.
+     */
+    public static int countMaterial(Player player, Material material) {
+        int count = 0;
+        PlayerInventory inventory = player.getInventory();
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack slot = inventory.getItem(i);
+            if (slot != null && slot.getType() == material) {
+                count += slot.getAmount();
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Resolve the offhand block override for wand/trowel tools.
+     * Returns the item in the other hand if it's a placeable block and offhand override is enabled,
+     * or null if no override applies.
+     */
+    public static ItemStack resolveOverrideBlock(Player player, EquipmentSlot wandHand, ConfigManager configManager) {
+        if (!configManager.isWandOffhandOverride()) {
+            return null;
+        }
+
+        EquipmentSlot otherHand = (wandHand == EquipmentSlot.HAND) ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND;
+        ItemStack otherItem = player.getInventory().getItem(otherHand);
+
+        if (otherItem == null || otherItem.getType().isAir()) {
+            return null;
+        }
+
+        if (!isPlaceable(otherItem)) {
+            return null;
+        }
+
+        return otherItem;
     }
 
     /**
