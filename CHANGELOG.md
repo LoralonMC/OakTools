@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Default permissions (use, craft, anvil repair) not registering with Paper's permission system, causing non-op players to get "no permission" errors even though permissions were set to `default: true`
+
 ## [2.0.0] - 2026-02-25
 
 ### Added
