@@ -73,11 +73,24 @@ public class ConfigManager {
     private boolean cachedFeatureAxisRotation = true;
     private boolean cachedFeatureSlabs = true;
 
+    // Harvesting tool settings
+    private boolean cachedExcavatorEnabled = true;
+    private boolean cachedLumberjackEnabled = false;
+    private boolean cachedVeinMinerEnabled = false;
+    private Map<ToolType, Integer> cachedMaxBlocks = new EnumMap<>(ToolType.class);
+    private Map<ToolType, Integer> cachedBreakSpeedTicks = new EnumMap<>(ToolType.class);
+    private Map<ToolType, Boolean> cachedUnbreakable = new EnumMap<>(ToolType.class);
+    private Map<ToolType, Boolean> cachedHarvestPreviewEnabled = new EnumMap<>(ToolType.class);
+    private Map<ToolType, NamedTextColor> cachedHarvestPreviewGlowColor = new EnumMap<>(ToolType.class);
+    private int cachedLumberjackMinLeaves = 5;
+    private boolean cachedVeinMinerGroupDeepslate = true;
+
     // CoreProtect integration
     private boolean cachedCoreProtectEnabled = true;
     private boolean cachedLogFileChanges = true;
     private boolean cachedLogTrowelPlacements = true;
     private boolean cachedLogWandPlacements = true;
+    private boolean cachedLogHarvestingBreaks = true;
 
     // Configurable excluded blocks for File tool
     private Set<Material> cachedExcludedFileMaterials = EnumSet.noneOf(Material.class);
@@ -235,6 +248,35 @@ public class ConfigManager {
         cachedLogFileChanges = config.getBoolean("integration.coreprotect.log-file-changes", true);
         cachedLogTrowelPlacements = config.getBoolean("integration.coreprotect.log-trowel-placements", true);
         cachedLogWandPlacements = config.getBoolean("integration.coreprotect.log-wand-placements", true);
+        cachedLogHarvestingBreaks = config.getBoolean("integration.coreprotect.log-harvesting-breaks", true);
+
+        // Harvesting tool settings
+        cachedExcavatorEnabled = config.getBoolean("tools.excavator.enabled", true);
+        cachedLumberjackEnabled = config.getBoolean("tools.lumberjack.enabled", false);
+        cachedVeinMinerEnabled = config.getBoolean("tools.vein-miner.enabled", false);
+        cachedLumberjackMinLeaves = config.getInt("tools.lumberjack.min-leaves", 5);
+        cachedVeinMinerGroupDeepslate = config.getBoolean("tools.vein-miner.group-deepslate", true);
+
+        Map<ToolType, Integer> maxBlocksMap = new EnumMap<>(ToolType.class);
+        Map<ToolType, Integer> breakSpeedMap = new EnumMap<>(ToolType.class);
+        Map<ToolType, Boolean> unbreakableMap = new EnumMap<>(ToolType.class);
+        Map<ToolType, Boolean> harvestPreviewEnabledMap = new EnumMap<>(ToolType.class);
+        Map<ToolType, NamedTextColor> harvestPreviewColorMap = new EnumMap<>(ToolType.class);
+        for (ToolType toolType : List.of(ToolType.EXCAVATOR, ToolType.LUMBERJACK, ToolType.VEIN_MINER)) {
+            String key = toolType.getConfigKey();
+            maxBlocksMap.put(toolType, config.getInt("tools." + key + ".max-blocks", 9));
+            breakSpeedMap.put(toolType, config.getInt("tools." + key + ".break-speed-ticks", 1));
+            unbreakableMap.put(toolType, config.getBoolean("tools." + key + ".durability.unbreakable", false));
+            harvestPreviewEnabledMap.put(toolType, config.getBoolean("tools." + key + ".preview.enabled", true));
+            harvestPreviewColorMap.put(toolType, parseNamedColor(
+                    config.getString("tools." + key + ".preview.glow-color", "YELLOW"),
+                    NamedTextColor.YELLOW));
+        }
+        cachedMaxBlocks = maxBlocksMap;
+        cachedBreakSpeedTicks = breakSpeedMap;
+        cachedUnbreakable = unbreakableMap;
+        cachedHarvestPreviewEnabled = harvestPreviewEnabledMap;
+        cachedHarvestPreviewGlowColor = harvestPreviewColorMap;
 
         // Excluded file materials
         Set<Material> excluded = EnumSet.noneOf(Material.class);
@@ -538,6 +580,61 @@ public class ConfigManager {
 
     public NamedTextColor getWandPreviewGlowColor() {
         return cachedWandPreviewGlowColor;
+    }
+
+    // Harvesting tool getters
+
+    public boolean isExcavatorEnabled() {
+        return cachedExcavatorEnabled;
+    }
+
+    public boolean isLumberjackEnabled() {
+        return cachedLumberjackEnabled;
+    }
+
+    public boolean isVeinMinerEnabled() {
+        return cachedVeinMinerEnabled;
+    }
+
+    public boolean isHarvestToolEnabled(ToolType toolType) {
+        return switch (toolType) {
+            case EXCAVATOR -> cachedExcavatorEnabled;
+            case LUMBERJACK -> cachedLumberjackEnabled;
+            case VEIN_MINER -> cachedVeinMinerEnabled;
+            default -> false;
+        };
+    }
+
+    public int getMaxBlocks(ToolType toolType) {
+        return cachedMaxBlocks.getOrDefault(toolType, 9);
+    }
+
+    public int getBreakSpeedTicks(ToolType toolType) {
+        return cachedBreakSpeedTicks.getOrDefault(toolType, 1);
+    }
+
+    public boolean isUnbreakable(ToolType toolType) {
+        return cachedUnbreakable.getOrDefault(toolType, false);
+    }
+
+    public boolean isHarvestPreviewEnabled(ToolType toolType) {
+        return cachedHarvestPreviewEnabled.getOrDefault(toolType, true);
+    }
+
+    public NamedTextColor getHarvestPreviewGlowColor(ToolType toolType) {
+        return cachedHarvestPreviewGlowColor.getOrDefault(toolType, NamedTextColor.YELLOW);
+    }
+
+    public int getLumberjackMinLeaves() {
+        return cachedLumberjackMinLeaves;
+    }
+
+    public boolean isVeinMinerGroupDeepslate() {
+        return cachedVeinMinerGroupDeepslate;
+    }
+
+    public boolean isLogHarvestingBreaks() {
+        return cachedLogHarvestingBreaks;
     }
 
     private NamedTextColor parseNamedColor(String name, NamedTextColor fallback) {

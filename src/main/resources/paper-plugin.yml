@@ -23,6 +23,9 @@ dependencies:
     packetevents:
       load: BEFORE
       required: false
+    OakOverflow:
+      load: BEFORE
+      required: false
 permissions:
   oaktools.*:
     description: 'All OakTools permissions'
@@ -38,6 +41,12 @@ permissions:
       oaktools.craft.file: true
       oaktools.craft.trowel: true
       oaktools.craft.wand: true
+      oaktools.use.excavator: true
+      oaktools.use.lumberjack: true
+      oaktools.use.veinminer: true
+      oaktools.craft.excavator: true
+      oaktools.craft.lumberjack: true
+      oaktools.craft.veinminer: true
       oaktools.repair.anvil: true
       oaktools.bypass.protection: true
   oaktools.give:
@@ -72,6 +81,24 @@ permissions:
     default: true
   oaktools.repair.anvil:
     description: 'Repair OakTools items in an anvil'
+    default: true
+  oaktools.use.excavator:
+    description: 'Use the Excavation Shovel'
+    default: true
+  oaktools.use.lumberjack:
+    description: "Use the Lumberjack's Axe"
+    default: true
+  oaktools.use.veinminer:
+    description: 'Use the Vein Miner Pickaxe'
+    default: true
+  oaktools.craft.excavator:
+    description: 'Craft the Excavation Shovel'
+    default: true
+  oaktools.craft.lumberjack:
+    description: "Craft the Lumberjack's Axe"
+    default: true
+  oaktools.craft.veinminer:
+    description: 'Craft the Vein Miner Pickaxe'
     default: true
   oaktools.bypass.protection:
     description: 'Use tools in protected regions'

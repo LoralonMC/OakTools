@@ -26,6 +26,7 @@ public class ConfigValidator {
         valid &= validateMessageSettings(config, warnings);
         valid &= validateRecipes(config, warnings);
         valid &= validateWandSettings(config, warnings);
+        valid &= validateHarvestingSettings(config, warnings);
 
         if (!warnings.isEmpty()) {
             logger.warning("=== Configuration Warnings ===");
@@ -228,5 +229,35 @@ public class ConfigValidator {
         }
 
         return true;
+    }
+
+    private static boolean validateHarvestingSettings(FileConfiguration config, List<String> warnings) {
+        boolean valid = true;
+        for (ToolType toolType : List.of(ToolType.EXCAVATOR, ToolType.LUMBERJACK, ToolType.VEIN_MINER)) {
+            String key = toolType.getConfigKey();
+            String path = "tools." + key;
+
+            if (!config.contains(path)) {
+                continue; // Tool section not present, skip (defaults apply)
+            }
+
+            int maxBlocks = config.getInt(path + ".max-blocks", 9);
+            if (maxBlocks < 1 || maxBlocks > 256) {
+                warnings.add(path + ".max-blocks must be 1-256. Found: " + maxBlocks);
+                valid = false;
+            }
+
+            int breakSpeed = config.getInt(path + ".break-speed-ticks", 1);
+            if (breakSpeed < 1 || breakSpeed > 20) {
+                warnings.add(path + ".break-speed-ticks must be 1-20. Found: " + breakSpeed);
+            }
+        }
+
+        int minLeaves = config.getInt("tools.lumberjack.min-leaves", 5);
+        if (minLeaves < 1 || minLeaves > 20) {
+            warnings.add("tools.lumberjack.min-leaves must be 1-20. Found: " + minLeaves);
+        }
+
+        return valid;
     }
 }

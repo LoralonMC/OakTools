@@ -399,6 +399,116 @@ tools:
     sounds:
       mode-switch: ui.button.click
 
+  # ============================================================
+  # HARVESTING TOOLS
+  # ============================================================
+  # Harvesting tools activate on block break (not right-click).
+  # Sneak while breaking to mine a single block without activating.
+  # Drops go directly to inventory; overflow to OakOverflow if installed.
+  excavator:
+    enabled: true
+    # Display name and lore (MiniMessage format)
+    # Placeholders: <tool>, <cur> (damage taken), <max>, <remaining>, <percent>
+    display:
+      enabled: true
+      name: "<white>Excavation Shovel</white>"
+      lore: []
+    base-material: WARPED_FUNGUS_ON_A_STICK
+    model-id: ""
+    durability:
+      max: 500
+      use-vanilla-damage-bar: true
+      repair-material: DIAMOND
+      repair-amount: 125
+      # Set to true for infinite durability (no damage taken)
+      unbreakable: false
+    # Locked tool — no enchantments allowed (empty list blocks all)
+    allowed-enchantments: []
+    recipe:
+      enabled: false
+      category: EQUIPMENT
+      shape:
+        - " D "
+        - " S "
+        - " S "
+      ingredients:
+        D: DIAMOND
+        S: STICK
+    # Maximum blocks per activation (3x3 = 9)
+    max-blocks: 9
+    # Ticks between each block break in the animation (1 = fastest)
+    break-speed-ticks: 1
+    preview:
+      enabled: true
+      # Glow outline color (same options as wand preview)
+      glow-color: YELLOW
+
+  lumberjack:
+    enabled: false
+    display:
+      enabled: true
+      name: "<white>Lumberjack's Axe</white>"
+      lore: []
+    base-material: WARPED_FUNGUS_ON_A_STICK
+    model-id: ""
+    durability:
+      max: 1000
+      use-vanilla-damage-bar: true
+      repair-material: DIAMOND
+      repair-amount: 250
+      unbreakable: false
+    allowed-enchantments: []
+    recipe:
+      enabled: false
+      category: EQUIPMENT
+      shape:
+        - "DD "
+        - "DS "
+        - " S "
+      ingredients:
+        D: DIAMOND
+        S: STICK
+    max-blocks: 64
+    break-speed-ticks: 1
+    # Minimum natural leaves nearby to qualify as a generated tree
+    min-leaves: 5
+    preview:
+      enabled: true
+      glow-color: YELLOW
+
+  vein-miner:
+    enabled: false
+    display:
+      enabled: true
+      name: "<white>Vein Miner Pickaxe</white>"
+      lore: []
+    base-material: WARPED_FUNGUS_ON_A_STICK
+    model-id: ""
+    durability:
+      max: 750
+      use-vanilla-damage-bar: true
+      repair-material: DIAMOND
+      repair-amount: 188
+      unbreakable: false
+    allowed-enchantments: []
+    recipe:
+      enabled: false
+      category: EQUIPMENT
+      shape:
+        - "DDD"
+        - " S "
+        - " S "
+      ingredients:
+        D: DIAMOND
+        S: STICK
+    max-blocks: 32
+    break-speed-ticks: 1
+    # Treat deepslate ore variants as the same vein (e.g. iron_ore + deepslate_iron_ore)
+    group-deepslate: true
+    preview:
+      enabled: true
+      glow-color: YELLOW
+
 # ============================================================
 # INTEGRATION SETTINGS
 # ============================================================
@@ -410,6 +520,7 @@ integration:
     log-file-changes: true
     log-trowel-placements: true
     log-wand-placements: true
+    log-harvesting-breaks: true
 
 # ============================================================
 # MESSAGES
@@ -461,6 +572,37 @@ messages:
   tool-low-durability:
     text: "<#D89B6A>Your <#FCD472><tool><#D89B6A> is low on durability! <#FCD472><remaining><#D89B6A>/<#FCD472><max><#D89B6A> remaining."
     display: action_bar
+  # Harvesting tool messages
+  excavator-breaking:
+    text: "<#8FAA87>Excavating... <#FCD472><count><#8FAA87>/<#FCD472><total>"
+    display: action_bar
+  excavator-complete:
+    text: "<#8FAA87>Excavated <#FCD472><count><#8FAA87> blocks."
+    display: action_bar
+  lumberjack-breaking:
+    text: "<#8FAA87>Chopping... <#FCD472><count><#8FAA87>/<#FCD472><total>"
+    display: action_bar
+  lumberjack-complete:
+    text: "<#8FAA87>Chopped <#FCD472><count><#8FAA87> blocks."
+    display: action_bar
+  veinminer-breaking:
+    text: "<#8FAA87>Mining... <#FCD472><count><#8FAA87>/<#FCD472><total>"
+    display: action_bar
+  veinminer-complete:
+    text: "<#8FAA87>Mined <#FCD472><count><#8FAA87> blocks."
+    display: action_bar
+  not-a-tree:
+    text: "<#D89B6A>That doesn't appear to be a natural tree."
+    display: action_bar
+  no-ore-vein:
+    text: "<#D89B6A>No connected ore vein found."
+    display: action_bar
+  operation-cancelled:
+    text: "<#D89B6A>Mining operation cancelled."
+    display: action_bar
+  inventory-overflow:
+    text: "<#D89B6A><count> items sent to overflow storage."
+    display: action_bar
 
   # Command messages (always delivered via chat)
   commands:
@@ -475,7 +617,7 @@ messages:
     give:
       usage: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Usage: /oaktools give <player> <tool> [durability]"
       player-not-found: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Player not found: <#FCD472><player>"
-      invalid-tool: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Invalid tool type. Valid types: file, trowel, wand"
+      invalid-tool: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Invalid tool type. Valid types: file, trowel, wand, excavator, lumberjack, vein-miner"
       invalid-durability: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Invalid durability value: <#FCD472><value>"
       success-sender: "<#6C757D>[<#6B7A5E>ᴛᴏᴏʟꜱ<#6C757D>] <#f2ebd7>Gave <#FCD472><tool><#f2ebd7> to <#FCD472><player><#f2ebd7>."
       success-target: "<#6C757D>[<#6B7A5E>ᴛᴏᴏʟꜱ<#6C757D>] <#8FAA87>You received a <#FCD472><tool><#8FAA87>!"
