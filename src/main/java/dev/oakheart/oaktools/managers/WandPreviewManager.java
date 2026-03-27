@@ -1,6 +1,7 @@
 package dev.oakheart.oaktools.managers;
 
 import dev.oakheart.oaktools.OakTools;
+import dev.oakheart.oaktools.integration.PacketPreviewRenderer;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.model.WandMode;
 import dev.oakheart.oaktools.util.Constants;
@@ -12,7 +13,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Slime;
 import org.bukkit.event.EventHandler;
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class WandPreviewManager implements Listener {
 
@@ -46,9 +47,16 @@ public class WandPreviewManager implements Listener {
 
     private final OakTools plugin;
     private final Map<UUID, PreviewState> previews = new HashMap<>();
-    private final Set<UUID> previewEntityIds = new HashSet<>();
     private BukkitTask previewTask;
     private Team previewTeam;
+
+    // Packet-based preview (when PacketEvents is available)
+    private boolean usePackets;
+    private final Set<Integer> fakeEntityIds = ConcurrentHashMap.newKeySet();
+    private Object packetClickListener; // PreviewPacketListener, stored as Object to avoid class loading
+
+    // Slime-based fallback state (only used when PacketEvents is absent)
+    private final Set<UUID> slimeEntityIds = new HashSet<>();
 
     public WandPreviewManager(OakTools plugin) {
         this.plugin = plugin;
@@ -59,6 +67,13 @@ public class WandPreviewManager implements Listener {
             return;
         }
 
+        // Detect PacketEvents for packet-based preview
+        usePackets = Bukkit.getPluginManager().getPlugin("packetevents") != null;
+        if (usePackets) {
+            packetClickListener = PacketPreviewRenderer.registerClickListener(plugin, fakeEntityIds);
+            plugin.getLogger().info("PacketEvents detected — using packet-based wand preview");
+        }
+
         // Set up scoreboard team for glow color
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         previewTeam = scoreboard.getTeam(TEAM_NAME);
@@ -66,6 +81,7 @@ public class WandPreviewManager implements Listener {
             previewTeam = scoreboard.registerNewTeam(TEAM_NAME);
         }
         previewTeam.color(plugin.getConfigManager().getWandPreviewGlowColor());
+        previewTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
 
         int intervalTicks = plugin.getConfigManager().getWandPreviewIntervalTicks();
         previewTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, intervalTicks, intervalTicks);
@@ -77,11 +93,18 @@ public class WandPreviewManager implements Listener {
             previewTask = null;
         }
 
-        for (PreviewState state : previews.values()) {
-            removeEntities(state.entities);
+        for (var entry : previews.entrySet()) {
+            removePreview(entry.getKey(), entry.getValue());
         }
         previews.clear();
-        previewEntityIds.clear();
+        fakeEntityIds.clear();
+        slimeEntityIds.clear();
+
+        if (usePackets && packetClickListener != null) {
+            PacketPreviewRenderer.unregisterClickListener(
+                    (dev.oakheart.oaktools.integration.PreviewPacketListener) packetClickListener);
+            packetClickListener = null;
+        }
 
         if (previewTeam != null) {
             previewTeam.unregister();
@@ -97,7 +120,7 @@ public class WandPreviewManager implements Listener {
     public void clearPreviewForPlayer(Player player) {
         PreviewState state = previews.remove(player.getUniqueId());
         if (state != null) {
-            removeEntities(state.entities);
+            removePreview(player.getUniqueId(), state);
         }
     }
 
@@ -165,7 +188,7 @@ public class WandPreviewManager implements Listener {
         int tz = targetBlock.getZ();
         PreviewState existingState = previews.get(uuid);
         if (existingState != null
-                && existingState.entitiesValid()
+                && existingState.entitiesValid(usePackets)
                 && existingState.lastX == tx
                 && existingState.lastY == ty
                 && existingState.lastZ == tz
@@ -176,7 +199,7 @@ public class WandPreviewManager implements Listener {
 
         // Clear old preview
         if (existingState != null) {
-            removeEntities(existingState.entities);
+            removePreview(uuid, existingState);
         }
 
         // Calculate new placements
@@ -217,14 +240,44 @@ public class WandPreviewManager implements Listener {
             }
         }
 
-        // Spawn invisible slimes with glow outline (no solid collision, no AI, player-specific)
-        // Slimes are cube-shaped like blocks but unlike shulkers, they don't block movement
-        List<Slime> entities = new ArrayList<>();
+        if (usePackets) {
+            spawnPacketPreview(player, uuid, placements, tx, ty, tz, targetFace, wandInfo.mode);
+        } else {
+            spawnSlimePreview(player, uuid, placements, tx, ty, tz, targetFace, wandInfo.mode);
+        }
+    }
+
+    // ===== Packet-based preview (PacketEvents) =====
+
+    private void spawnPacketPreview(Player player, UUID uuid, List<Block> placements,
+                                    int tx, int ty, int tz, BlockFace targetFace, WandMode wandMode) {
+        List<FakeEntity> entities = new ArrayList<>();
+
+        for (Block block : placements) {
+            int entityId = PacketPreviewRenderer.nextEntityId();
+            UUID entityUuid = UUID.randomUUID();
+            PacketPreviewRenderer.spawnSlime(player, entityId, entityUuid,
+                    block.getX() + 0.5, block.getY(), block.getZ() + 0.5);
+            fakeEntityIds.add(entityId);
+            entities.add(new FakeEntity(entityId, entityUuid));
+            if (previewTeam != null) {
+                previewTeam.addEntry(entityUuid.toString());
+            }
+        }
+
+        previews.put(uuid, new PreviewState(null, entities, tx, ty, tz, targetFace, wandMode));
+    }
+
+    // ===== Slime-based preview (fallback) =====
+
+    private void spawnSlimePreview(Player player, UUID uuid, List<Block> placements,
+                                   int tx, int ty, int tz, BlockFace targetFace, WandMode wandMode) {
+        List<Slime> slimes = new ArrayList<>();
 
         for (Block block : placements) {
             Location spawnLoc = block.getLocation().add(0.5, 0, 0.5);
             Slime slime = block.getWorld().spawn(spawnLoc, Slime.class, entity -> {
-                entity.setSize(2); // ~1 block dimensions (1.02 x 1.02)
+                entity.setSize(2);
                 entity.setAI(false);
                 entity.setSilent(true);
                 entity.setInvulnerable(true);
@@ -234,42 +287,62 @@ public class WandPreviewManager implements Listener {
                 entity.setCollidable(false);
                 entity.setVisibleByDefault(false);
                 entity.setPersistent(false);
-                // Tag so mob clearing plugins can ignore these
                 entity.customName(Component.text("oaktools_preview"));
                 entity.setCustomNameVisible(false);
                 entity.getPersistentDataContainer().set(
                         Constants.PREVIEW_ENTITY, PersistentDataType.BYTE, (byte) 1);
                 entity.addScoreboardTag("oaktools_preview");
             });
-            previewEntityIds.add(slime.getUniqueId());
+            slimeEntityIds.add(slime.getUniqueId());
             if (previewTeam != null) {
                 previewTeam.addEntry(slime.getUniqueId().toString());
             }
             player.showEntity(plugin, slime);
-            entities.add(slime);
+            slimes.add(slime);
         }
 
-        previews.put(uuid, new PreviewState(entities, tx, ty, tz, targetFace, wandInfo.mode));
+        previews.put(uuid, new PreviewState(slimes, null, tx, ty, tz, targetFace, wandMode));
     }
+
+    // ===== Preview removal =====
 
     private void clearAndRemove(UUID uuid) {
         PreviewState state = previews.remove(uuid);
         if (state != null) {
-            removeEntities(state.entities);
+            removePreview(uuid, state);
         }
     }
 
-    private void removeEntities(List<Slime> entities) {
-        for (Slime entity : entities) {
-            previewEntityIds.remove(entity.getUniqueId());
-            if (previewTeam != null) {
-                previewTeam.removeEntry(entity.getUniqueId().toString());
+    private void removePreview(UUID playerId, PreviewState state) {
+        if (state.fakeEntities() != null) {
+            // Packet mode: send destroy packets and clean up team entries
+            for (FakeEntity entity : state.fakeEntities()) {
+                fakeEntityIds.remove(entity.entityId());
+                if (previewTeam != null) {
+                    previewTeam.removeEntry(entity.entityUuid().toString());
+                }
             }
-            if (entity.isValid()) {
-                entity.remove();
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null && !state.fakeEntities().isEmpty()) {
+                int[] ids = state.fakeEntities().stream()
+                        .mapToInt(FakeEntity::entityId).toArray();
+                PacketPreviewRenderer.destroy(player, ids);
+            }
+        } else if (state.slimeEntities() != null) {
+            // Slime mode: remove real entities
+            for (Slime slime : state.slimeEntities()) {
+                slimeEntityIds.remove(slime.getUniqueId());
+                if (previewTeam != null) {
+                    previewTeam.removeEntry(slime.getUniqueId().toString());
+                }
+                if (slime.isValid()) {
+                    slime.remove();
+                }
             }
         }
     }
+
+    // ===== Wand detection =====
 
     private WandInfo findWandInfo(Player player) {
         ItemStack mainHand = player.getInventory().getItemInMainHand();
@@ -302,9 +375,11 @@ public class WandPreviewManager implements Listener {
         return WandMode.fromString(modeString);
     }
 
+    // ===== Event handlers (slime fallback only — packet entities can't be interacted with) =====
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPreviewEntityInteract(PlayerInteractEntityEvent event) {
-        if (!previewEntityIds.contains(event.getRightClicked().getUniqueId())) {
+        if (!slimeEntityIds.contains(event.getRightClicked().getUniqueId())) {
             return;
         }
 
@@ -330,7 +405,7 @@ public class WandPreviewManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPreviewEntityDamage(EntityDamageByEntityEvent event) {
-        if (!previewEntityIds.contains(event.getEntity().getUniqueId())) {
+        if (!slimeEntityIds.contains(event.getEntity().getUniqueId())) {
             return;
         }
 
@@ -347,13 +422,20 @@ public class WandPreviewManager implements Listener {
         clearAndRemove(event.getPlayer().getUniqueId());
     }
 
+    // ===== Inner types =====
+
+    private record FakeEntity(int entityId, UUID entityUuid) {}
+
     private record WandInfo(EquipmentSlot hand, WandMode mode) {}
 
-    private record PreviewState(List<Slime> entities, int lastX, int lastY, int lastZ,
+    private record PreviewState(List<Slime> slimeEntities, List<FakeEntity> fakeEntities,
+                                int lastX, int lastY, int lastZ,
                                 BlockFace lastTargetFace, WandMode lastWandMode) {
-        /** Check if preview entities are still alive (not cleared by another plugin). */
-        boolean entitiesValid() {
-            return !entities.isEmpty() && entities.getFirst().isValid();
+        boolean entitiesValid(boolean packetMode) {
+            if (packetMode && fakeEntities != null) {
+                return !fakeEntities.isEmpty();
+            }
+            return slimeEntities != null && !slimeEntities.isEmpty() && slimeEntities.getFirst().isValid();
         }
     }
 }

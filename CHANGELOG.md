@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Wand placement preview now uses packet-based entities via PacketEvents when available (zero server overhead, no real entities spawned). Falls back to real slime entities if PacketEvents is not installed.
+
 ### Fixed
 
 - Default permissions (use, craft, anvil repair) not registering with Paper's permission system, causing non-op players to get "no permission" errors even though permissions were set to `default: true`

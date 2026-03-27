@@ -20,6 +20,9 @@ dependencies:
     Vulcan:
       load: BEFORE
       required: false
+    packetevents:
+      load: BEFORE
+      required: false
 permissions:
   oaktools.*:
     description: 'All OakTools permissions'
