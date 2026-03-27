@@ -134,14 +134,13 @@ public final class OakTools extends JavaPlugin {
     private void scheduleRecipeRegistration() {
         boolean usesExternalProvider = false;
 
-        String fileModel = configManager.getConfig().getString("tools.file.model-id", "");
-        String trowelModel = configManager.getConfig().getString("tools.trowel.model-id", "");
-        String wandModel = configManager.getConfig().getString("tools.wand.model-id", "");
-
-        if (fileModel.toLowerCase().startsWith("nexo:") || fileModel.toLowerCase().startsWith("itemsadder:") ||
-            trowelModel.toLowerCase().startsWith("nexo:") || trowelModel.toLowerCase().startsWith("itemsadder:") ||
-            wandModel.toLowerCase().startsWith("nexo:") || wandModel.toLowerCase().startsWith("itemsadder:")) {
-            usesExternalProvider = true;
+        for (dev.oakheart.oaktools.model.ToolType toolType : dev.oakheart.oaktools.model.ToolType.values()) {
+            String modelId = configManager.getConfig().getString(
+                    "tools." + toolType.getConfigKey() + ".model-id", "").toLowerCase();
+            if (modelId.startsWith("nexo:") || modelId.startsWith("itemsadder:")) {
+                usesExternalProvider = true;
+                break;
+            }
         }
 
         if (usesExternalProvider) {

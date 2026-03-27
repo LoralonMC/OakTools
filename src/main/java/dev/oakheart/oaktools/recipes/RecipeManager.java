@@ -20,14 +20,14 @@ public class RecipeManager {
     }
 
     public void registerRecipes() {
-        registerRecipe(ToolType.FILE);
-        registerRecipe(ToolType.TROWEL);
-        registerRecipe(ToolType.WAND);
+        for (ToolType toolType : ToolType.values()) {
+            registerRecipe(toolType);
+        }
     }
 
     private void registerRecipe(ToolType toolType) {
         FileConfiguration config = plugin.getConfigManager().getConfig();
-        String toolName = toolType.name().toLowerCase();
+        String toolName = toolType.getConfigKey();
 
         if (!config.getBoolean("tools." + toolName + ".recipe.enabled", true)) {
             return;
@@ -93,7 +93,7 @@ public class RecipeManager {
 
     public void unregisterRecipes() {
         for (ToolType toolType : ToolType.values()) {
-            String toolName = toolType.name().toLowerCase();
+            String toolName = toolType.getConfigKey();
             NamespacedKey key = new NamespacedKey(plugin, toolName + "_recipe");
             plugin.getServer().removeRecipe(key);
         }

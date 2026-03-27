@@ -260,7 +260,7 @@ public class ConfigManager {
         Map<ToolType, List<String>> displayLore = new EnumMap<>(ToolType.class);
 
         for (ToolType toolType : ToolType.values()) {
-            String toolLower = toolType.name().toLowerCase();
+            String toolLower = toolType.getConfigKey();
 
             // Repair material
             String materialName = config.getString("tools." + toolLower + ".durability.repair-material", "IRON_INGOT");

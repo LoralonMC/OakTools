@@ -1,5 +1,6 @@
 package dev.oakheart.oaktools.config;
 
+import dev.oakheart.oaktools.model.ToolType;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,9 +18,9 @@ public class ConfigValidator {
         List<String> warnings = new ArrayList<>();
         boolean valid = true;
 
-        valid &= validateTool(config, "file", warnings);
-        valid &= validateTool(config, "trowel", warnings);
-        valid &= validateTool(config, "wand", warnings);
+        for (ToolType toolType : ToolType.values()) {
+            valid &= validateTool(config, toolType.getConfigKey(), warnings);
+        }
         valid &= validateGeneralSettings(config, warnings);
         valid &= validateDisplaySettings(config, warnings);
         valid &= validateMessageSettings(config, warnings);
@@ -80,8 +81,8 @@ public class ConfigValidator {
     }
 
     private static boolean validateDisplaySettings(FileConfiguration config, List<String> warnings) {
-        for (String toolName : List.of("file", "trowel", "wand")) {
-            String path = "tools." + toolName + ".display";
+        for (ToolType toolType : ToolType.values()) {
+            String path = "tools." + toolType.getConfigKey() + ".display";
             if (!config.contains(path)) {
                 warnings.add("Missing display configuration section: " + path);
                 return false;
@@ -120,8 +121,8 @@ public class ConfigValidator {
 
     private static boolean validateRecipes(FileConfiguration config, List<String> warnings) {
         boolean valid = true;
-        for (String toolName : List.of("file", "trowel", "wand")) {
-            String path = "tools." + toolName + ".recipe";
+        for (ToolType toolType : ToolType.values()) {
+            String path = "tools." + toolType.getConfigKey() + ".recipe";
             if (!config.getBoolean(path + ".enabled", false)) {
                 continue;
             }
