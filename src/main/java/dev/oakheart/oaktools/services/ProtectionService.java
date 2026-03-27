@@ -4,6 +4,7 @@ import dev.oakheart.oaktools.OakTools;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -47,5 +48,19 @@ public class ProtectionService {
         plugin.debug("[Protection Debug] Event fired. Cancelled: " + fakeEvent.isCancelled() + ", Result: " + result);
 
         return result;
+    }
+
+    /**
+     * Check if a player can break a block, using a fake BlockBreakEvent
+     * to let protection plugins (WorldGuard, GriefPrevention, Towny, etc.) deny it.
+     */
+    public boolean canBreakBlock(Player player, Block block) {
+        if (player.hasPermission(BYPASS_PERMISSION)) {
+            return true;
+        }
+
+        BlockBreakEvent fakeEvent = new BlockBreakEvent(block, player);
+        plugin.getServer().getPluginManager().callEvent(fakeEvent);
+        return !fakeEvent.isCancelled();
     }
 }

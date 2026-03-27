@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Excavation Shovel harvesting tool — mines a 3x3 area of shovel-mineable blocks on the clicked face with animated one-by-one breaking
+- Animated breaking system with per-block break particles, sound effects, and crack animation via PacketEvents
+- Glow outline preview for harvesting tools showing affected blocks before breaking
+- Sneak while breaking to disable multi-block activation (mine single blocks normally)
+- OakOverflow integration for inventory overflow — drops go to inventory first, overflow storage second, ground last
+- Enchanting table blocked for "locked" tools (tools with empty allowed-enchantments)
+- Per-tool `unbreakable` config option for infinite durability
+- Config stubs for Lumberjack's Axe and Vein Miner Pickaxe (disabled, coming soon)
+
 ### Changed
 
 - Wand placement preview now uses packet-based entities via PacketEvents when available (zero server overhead, no real entities spawned). Falls back to real slime entities if PacketEvents is not installed.

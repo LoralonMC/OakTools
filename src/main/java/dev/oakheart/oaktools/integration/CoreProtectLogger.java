@@ -116,6 +116,23 @@ public class CoreProtectLogger {
         }
     }
 
+    public void logHarvestingBreak(Player player, Block block, BlockData blockData) {
+        if (!available || !plugin.getConfigManager().isLogHarvestingBreaks()) {
+            return;
+        }
+
+        try {
+            coreProtectAPI.logRemoval(
+                    player.getName(),
+                    block.getLocation(),
+                    blockData.getMaterial(),
+                    blockData
+            );
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to log harvesting break to CoreProtect: " + e.getMessage());
+        }
+    }
+
     public boolean isAvailable() {
         return available;
     }
