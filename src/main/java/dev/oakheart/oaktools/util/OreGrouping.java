@@ -98,14 +98,20 @@ public class OreGrouping {
         return vein;
     }
 
-    private static Block[] getAdjacentBlocks(Block block) {
-        return new Block[]{
-                block.getRelative(1, 0, 0),
-                block.getRelative(-1, 0, 0),
-                block.getRelative(0, 1, 0),
-                block.getRelative(0, -1, 0),
-                block.getRelative(0, 0, 1),
-                block.getRelative(0, 0, -1)
-        };
+    /**
+     * Returns all 26 surrounding blocks (face + edge + corner neighbors).
+     * Ore veins often generate diagonally, so 26-connected catches the full vein.
+     */
+    private static List<Block> getAdjacentBlocks(Block block) {
+        List<Block> neighbors = new ArrayList<>(26);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) continue;
+                    neighbors.add(block.getRelative(dx, dy, dz));
+                }
+            }
+        }
+        return neighbors;
     }
 }
