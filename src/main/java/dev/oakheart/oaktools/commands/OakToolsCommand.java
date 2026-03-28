@@ -71,9 +71,13 @@ public class OakToolsCommand {
                                             }
                                             return builder.buildFuture();
                                         })
-                                        .executes(ctx -> handleGive(ctx, -1))
+                                        .executes(ctx -> handleGive(ctx, -1, false))
+                                        .then(Commands.literal("-silent")
+                                                .executes(ctx -> handleGive(ctx, -1, true)))
                                         .then(Commands.argument("durability", IntegerArgumentType.integer(1))
-                                                .executes(ctx -> handleGive(ctx, IntegerArgumentType.getInteger(ctx, "durability")))))))
+                                                .executes(ctx -> handleGive(ctx, IntegerArgumentType.getInteger(ctx, "durability"), false))
+                                                .then(Commands.literal("-silent")
+                                                        .executes(ctx -> handleGive(ctx, IntegerArgumentType.getInteger(ctx, "durability"), true)))))))
                 .then(Commands.literal("reload")
                         .requires(src -> src.getSender().hasPermission("oaktools.reload"))
                         .executes(ctx -> handleReload(ctx.getSource().getSender())))
@@ -111,7 +115,7 @@ public class OakToolsCommand {
 
     // ===== Give =====
 
-    private int handleGive(CommandContext<CommandSourceStack> ctx, int durability) {
+    private int handleGive(CommandContext<CommandSourceStack> ctx, int durability, boolean silent) {
         CommandSender sender = ctx.getSource().getSender();
 
         Player target = resolvePlayer(ctx);
@@ -138,8 +142,10 @@ public class OakToolsCommand {
             String plainName = displayName.replaceAll("<[^>]+>", "");
             plugin.getMessageManager().sendCommandMessage(sender, "give.success-sender",
                     Map.of("tool", plainName, "player", target.getName()));
-            plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
-                    Map.of("tool", plainName));
+            if (!silent) {
+                plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
+                        Map.of("tool", plainName));
+            }
             return Command.SINGLE_SUCCESS;
         }
 
@@ -170,8 +176,10 @@ public class OakToolsCommand {
 
         plugin.getMessageManager().sendCommandMessage(sender, "give.success-sender",
                 Map.of("tool", toolType.getDisplayName(), "player", target.getName()));
-        plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
-                Map.of("tool", toolType.getDisplayName()));
+        if (!silent) {
+            plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
+                    Map.of("tool", toolType.getDisplayName()));
+        }
 
         return Command.SINGLE_SUCCESS;
     }
