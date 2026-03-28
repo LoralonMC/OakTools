@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class ConfigValidator {
@@ -38,7 +39,16 @@ public class ConfigValidator {
         return valid;
     }
 
+    // Tools that use a different config structure and skip standard validation
+    private static final Set<ToolType> NON_STANDARD_TOOLS = Set.of(ToolType.SICKLE);
+
     private static boolean validateTool(FileConfiguration config, String toolName, List<String> warnings) {
+        // Skip tools with non-standard config layouts
+        ToolType toolType = ToolType.fromString(toolName);
+        if (toolType != null && NON_STANDARD_TOOLS.contains(toolType)) {
+            return true;
+        }
+
         String path = "tools." + toolName;
 
         if (!config.contains(path)) {
@@ -53,14 +63,16 @@ public class ConfigValidator {
         }
 
         String repairMat = config.getString(path + ".durability.repair-material", "");
-        try {
-            Material.valueOf(repairMat);
-        } catch (IllegalArgumentException e) {
-            warnings.add(path + ".durability.repair-material '" + repairMat + "' is not a valid material.");
+        if (!repairMat.equalsIgnoreCase("NONE") && !repairMat.isEmpty()) {
+            try {
+                Material.valueOf(repairMat);
+            } catch (IllegalArgumentException e) {
+                warnings.add(path + ".durability.repair-material '" + repairMat + "' is not a valid material.");
+            }
         }
 
         int repairAmount = config.getInt(path + ".durability.repair-amount", -1);
-        if (repairAmount <= 0) {
+        if (repairAmount <= 0 && !repairMat.equalsIgnoreCase("NONE")) {
             warnings.add(path + ".durability.repair-amount must be > 0. Found: " + repairAmount);
         }
 
@@ -83,6 +95,7 @@ public class ConfigValidator {
 
     private static boolean validateDisplaySettings(FileConfiguration config, List<String> warnings) {
         for (ToolType toolType : ToolType.values()) {
+            if (NON_STANDARD_TOOLS.contains(toolType)) continue;
             String path = "tools." + toolType.getConfigKey() + ".display";
             if (!config.contains(path)) {
                 warnings.add("Missing display configuration section: " + path);
@@ -123,6 +136,7 @@ public class ConfigValidator {
     private static boolean validateRecipes(FileConfiguration config, List<String> warnings) {
         boolean valid = true;
         for (ToolType toolType : ToolType.values()) {
+            if (NON_STANDARD_TOOLS.contains(toolType)) continue;
             String path = "tools." + toolType.getConfigKey() + ".recipe";
             if (!config.getBoolean(path + ".enabled", false)) {
                 continue;
@@ -176,6 +190,9 @@ public class ConfigValidator {
                 ingredientKeys.add(c);
 
                 String materialName = ingredients.getString(key, "");
+                if (materialName.startsWith("#")) {
+                    continue; // Tag-based ingredient (e.g. #planks), validated at registration time
+                }
                 try {
                     Material.valueOf(materialName);
                 } catch (IllegalArgumentException e) {
