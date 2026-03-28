@@ -413,7 +413,7 @@ tools:
       enabled: true
       name: "<white>Excavation Shovel</white>"
       lore: []
-    base-material: WARPED_FUNGUS_ON_A_STICK
+    base-material: NETHERITE_SHOVEL
     model-id: ""
     durability:
       max: 500
@@ -449,7 +449,7 @@ tools:
       enabled: true
       name: "<white>Lumberjack's Axe</white>"
       lore: []
-    base-material: WARPED_FUNGUS_ON_A_STICK
+    base-material: NETHERITE_AXE
     model-id: ""
     durability:
       max: 1000
@@ -482,7 +482,7 @@ tools:
       enabled: true
       name: "<white>Vein Miner Pickaxe</white>"
       lore: []
-    base-material: WARPED_FUNGUS_ON_A_STICK
+    base-material: NETHERITE_PICKAXE
     model-id: ""
     durability:
       max: 750

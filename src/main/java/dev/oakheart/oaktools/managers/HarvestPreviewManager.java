@@ -188,8 +188,10 @@ public class HarvestPreviewManager implements Listener {
             removePreview(uuid, existing);
         }
 
-        // Calculate affected blocks
+        // Calculate affected blocks, excluding the center block (player already sees
+        // the vanilla selection outline on it, and a slime there would intercept left-clicks)
         List<Block> blocks = calculateAffectedBlocks(player, targetBlock, targetFace, toolType);
+        blocks.removeIf(b -> b.equals(targetBlock));
         if (blocks.isEmpty()) {
             if (hasPreview) clearAndRemove(uuid);
             return;
