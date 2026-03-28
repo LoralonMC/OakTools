@@ -413,11 +413,13 @@ tools:
       enabled: true
       name: "<white>Excavation Shovel</white>"
       lore: []
-    # Base material controls mining speed (stone = slower, balanced for crate items)
     base-material: STONE_SHOVEL
-    # Override harvest level so any base material can mine all blocks in its category
-    # Set to false to use the base material's natural harvest level restrictions
-    override-harvest-level: true
+    # Mining speed override (wood=2, stone=4, iron=6, diamond=8, netherite=9)
+    # Set to 0 to use the base material's natural speed
+    mining-speed: 4.0
+    # Harvest level determines what blocks drop items (wood, stone, iron, diamond, netherite)
+    # Set to "none" to use the base material's natural harvest level
+    harvest-level: diamond
     model-id: ""
     durability:
       max: 500
@@ -450,7 +452,8 @@ tools:
       name: "<white>Lumberjack's Axe</white>"
       lore: []
     base-material: STONE_AXE
-    override-harvest-level: true
+    mining-speed: 4.0
+    harvest-level: diamond
     model-id: ""
     durability:
       max: 1000
@@ -481,7 +484,8 @@ tools:
       name: "<white>Vein Miner Pickaxe</white>"
       lore: []
     base-material: STONE_PICKAXE
-    override-harvest-level: true
+    mining-speed: 4.0
+    harvest-level: diamond
     model-id: ""
     durability:
       max: 750

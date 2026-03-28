@@ -96,8 +96,8 @@ public class ItemFactory {
     }
 
     /**
-     * Overrides the tool component on harvesting tools so any base material
-     * can mine all blocks in the relevant category (e.g. stone pickaxe mines diamond ore).
+     * Overrides the tool component on harvesting tools to set custom mining speed
+     * and harvest level independently from the base material.
      * Also sets damagePerBlock=0 since we handle durability via PDC.
      */
     private void applyToolComponent(ItemMeta meta, ToolType toolType) {
@@ -113,10 +113,38 @@ public class ItemFactory {
         ToolComponent tool = meta.getTool();
         if (tool == null) return;
 
-        tool.setDamagePerBlock(0); // We handle durability via PDC
+        tool.setDamagePerBlock(0);
 
-        if (plugin.getConfigManager().isOverrideHarvestLevel(toolType)) {
-            tool.addRule(mineableTag, null, true); // null speed = keep base material speed, correct for drops = true
+        float configuredSpeed = plugin.getConfigManager().getMiningSpeed(toolType);
+        String harvestLevel = plugin.getConfigManager().getHarvestLevel(toolType);
+
+        // Skip if both are set to "use base material defaults"
+        if (configuredSpeed <= 0 && "none".equalsIgnoreCase(harvestLevel)) {
+            meta.setTool(tool);
+            return;
+        }
+
+        // Speed: null = use base material's natural speed, non-null = override
+        Float speed = configuredSpeed > 0 ? configuredSpeed : null;
+
+        // Base rule: all blocks in category are mineable with correct drops
+        tool.addRule(mineableTag, speed, true);
+
+        // Add harvest level restrictions (rules are evaluated in order, last match wins)
+        switch (harvestLevel.toLowerCase()) {
+            case "wood" -> {
+                tool.addRule(Tag.NEEDS_STONE_TOOL, speed, false);
+                tool.addRule(Tag.NEEDS_IRON_TOOL, speed, false);
+                tool.addRule(Tag.NEEDS_DIAMOND_TOOL, speed, false);
+            }
+            case "stone" -> {
+                tool.addRule(Tag.NEEDS_IRON_TOOL, speed, false);
+                tool.addRule(Tag.NEEDS_DIAMOND_TOOL, speed, false);
+            }
+            case "iron" -> {
+                tool.addRule(Tag.NEEDS_DIAMOND_TOOL, speed, false);
+            }
+            // diamond, netherite = no restrictions (base rule covers everything)
         }
 
         meta.setTool(tool);
