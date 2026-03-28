@@ -49,7 +49,7 @@ public class VulcanHook implements Listener {
         }, EXEMPTION_TICKS);
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onVulcanFlag(VulcanFlagEvent event) {
         if (exemptionCounts.containsKey(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
@@ -58,7 +58,7 @@ public class VulcanHook implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onVulcanSetback(me.frep.vulcan.api.event.VulcanSetbackEvent event) {
         if (exemptionCounts.containsKey(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
