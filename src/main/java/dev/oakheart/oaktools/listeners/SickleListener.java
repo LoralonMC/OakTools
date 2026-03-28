@@ -64,27 +64,25 @@ public class SickleListener implements Listener {
         if (!(brokenBlock.getBlockData() instanceof Ageable ageable)) return;
         if (ageable.getAge() < ageable.getMaximumAge()) return; // Not mature
 
-        Material cropType = brokenBlock.getType();
-        if (!SEED_MAP.containsKey(cropType)) return; // Not a supported crop
+        if (!SEED_MAP.containsKey(brokenBlock.getType())) return; // Not a supported crop
 
         String tier = plugin.getItemFactory().getToolTier(item);
         if (tier == null) return;
         int radius = plugin.getConfigManager().getSickleRadius(tier);
 
-        // Suppress vanilla drops — we handle everything
-        event.setDropItems(false);
+        // Cancel vanilla break — we handle everything (break, drops, replant, durability)
+        event.setCancelled(true);
 
-        // Collect crops to harvest
+        // Collect crops to harvest (any mature supported crop in area, not just same type)
         List<Block> crops = new ArrayList<>();
         crops.add(brokenBlock);
 
         if (!player.isSneaking() && radius > 0) {
-            // Area harvest — same crop type, mature only
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dz = -radius; dz <= radius; dz++) {
-                    if (dx == 0 && dz == 0) continue; // Already added
+                    if (dx == 0 && dz == 0) continue;
                     Block candidate = brokenBlock.getRelative(dx, 0, dz);
-                    if (candidate.getType() != cropType) continue;
+                    if (!SEED_MAP.containsKey(candidate.getType())) continue;
                     if (!(candidate.getBlockData() instanceof Ageable candidateAge)) continue;
                     if (candidateAge.getAge() < candidateAge.getMaximumAge()) continue;
                     crops.add(candidate);
@@ -92,27 +90,27 @@ public class SickleListener implements Listener {
             }
         }
 
-        Material seedMaterial = SEED_MAP.get(cropType);
         int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
         int harvestedCount = 0;
 
         for (Block crop : crops) {
+            Material seedMaterial = SEED_MAP.get(crop.getType());
+
             // Calculate drops using the player's actual sickle (respects Fortune)
             Collection<ItemStack> drops = crop.getDrops(item, player);
 
             // Remove one seed for replanting
             boolean seedConsumed = removeSeed(drops, seedMaterial);
 
-            // Replant the crop at growth stage 0
+            // CoreProtect logging (before modifying the block)
+            plugin.getCoreProtectLogger().logHarvestingBreak(player, crop, crop.getBlockData());
+
+            // Replant the crop at growth stage 0, or clear if no seed
             if (seedConsumed && crop.getBlockData() instanceof Ageable cropData) {
                 cropData.setAge(0);
                 crop.setBlockData(cropData);
             } else {
-                // No seed in drops — can't replant, just clear the block
-                // (initial block is already broken by vanilla, skip setType for it)
-                if (!crop.equals(brokenBlock)) {
-                    crop.setType(Material.AIR);
-                }
+                crop.setType(Material.AIR);
             }
 
             // Drop remaining items naturally at the crop's location
@@ -120,27 +118,21 @@ public class SickleListener implements Listener {
                 crop.getWorld().dropItemNaturally(crop.getLocation().add(0.5, 0.3, 0.5), drop);
             }
 
-            // CoreProtect logging
-            plugin.getCoreProtectLogger().logHarvestingBreak(player, crop, crop.getBlockData());
-
             harvestedCount++;
 
-            // Durability damage for extra crops (first one handled by vanilla)
-            if (crop != brokenBlock) {
-                if (shouldConsumeDurability(unbreakingLevel)) {
-                    ItemMeta meta = item.getItemMeta();
-                    if (meta instanceof Damageable damageable) {
-                        int newDamage = damageable.getDamage() + 1;
-                        if (newDamage >= item.getType().getMaxDurability()) {
-                            // Tool breaks — stop harvesting
-                            player.getInventory().setItemInMainHand(null);
-                            player.getWorld().playSound(player.getLocation(),
-                                    org.bukkit.Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
-                            break;
-                        }
-                        damageable.setDamage(newDamage);
-                        item.setItemMeta(meta);
+            // Durability damage for each crop (respects Unbreaking)
+            if (shouldConsumeDurability(unbreakingLevel)) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta instanceof Damageable damageable) {
+                    int newDamage = damageable.getDamage() + 1;
+                    if (newDamage >= item.getType().getMaxDurability()) {
+                        player.getInventory().setItemInMainHand(null);
+                        player.getWorld().playSound(player.getLocation(),
+                                org.bukkit.Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+                        break;
                     }
+                    damageable.setDamage(newDamage);
+                    item.setItemMeta(meta);
                 }
             }
         }
