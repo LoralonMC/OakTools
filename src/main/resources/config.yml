@@ -441,10 +441,12 @@ tools:
       ingredients:
         D: DIAMOND
         S: STICK
-    # Maximum blocks per activation (3x3 = 9)
-    max-blocks: 9
+    # Grid size (3 = 3x3, 5 = 5x5, etc. — must be odd)
+    grid-size: 3
     # Ticks between each block break in the animation (1 = fastest)
     break-speed-ticks: 1
+    # Show progress/completion action bar messages
+    show-progress: true
 
   lumberjack:
     enabled: true
@@ -475,6 +477,8 @@ tools:
         S: STICK
     max-blocks: 64
     break-speed-ticks: 1
+    # Show progress/completion action bar messages
+    show-progress: true
     # Minimum natural leaves nearby to qualify as a generated tree
     min-leaves: 5
 
@@ -507,6 +511,8 @@ tools:
         S: STICK
     max-blocks: 32
     break-speed-ticks: 1
+    # Show progress/completion action bar messages
+    show-progress: true
     # Treat deepslate ore variants as the same vein (e.g. iron_ore + deepslate_iron_ore)
     group-deepslate: true
 

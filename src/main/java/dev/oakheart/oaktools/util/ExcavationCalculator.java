@@ -15,25 +15,26 @@ import java.util.List;
 public class ExcavationCalculator {
 
     /**
-     * Calculates blocks in a 3x3 grid on the given face, filtered to the same material
+     * Calculates blocks in an NxN grid on the given face, filtered to the same material
      * as the center block and shovel-mineable.
      *
-     * @param center    the block that was clicked/targeted
-     * @param face      the face of the block that was clicked
-     * @param maxBlocks maximum number of blocks to return
-     * @return list of matching blocks (may be less than 9 if some don't match)
+     * @param center   the block that was clicked/targeted
+     * @param face     the face of the block that was clicked
+     * @param gridSize the grid size (3 = 3x3, 5 = 5x5, etc.)
+     * @return list of matching blocks
      */
-    public static List<Block> calculate(Block center, BlockFace face, int maxBlocks) {
+    public static List<Block> calculate(Block center, BlockFace face, int gridSize) {
         List<Block> blocks = new ArrayList<>();
         Material targetMaterial = center.getType();
+        int radius = gridSize / 2;
 
         // Determine the two axes perpendicular to the face normal
         BlockFace[] axes = getPerpendicularAxes(face);
         BlockFace axis1 = axes[0];
         BlockFace axis2 = axes[1];
 
-        for (int a = -1; a <= 1 && blocks.size() < maxBlocks; a++) {
-            for (int b = -1; b <= 1 && blocks.size() < maxBlocks; b++) {
+        for (int a = -radius; a <= radius; a++) {
+            for (int b = -radius; b <= radius; b++) {
                 Block target = center.getRelative(
                         axis1.getModX() * a + axis2.getModX() * b,
                         axis1.getModY() * a + axis2.getModY() * b,

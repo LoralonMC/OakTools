@@ -82,6 +82,8 @@ public class ConfigManager {
     private Map<ToolType, Boolean> cachedUnbreakable = new EnumMap<>(ToolType.class);
     private Map<ToolType, Float> cachedMiningSpeed = new EnumMap<>(ToolType.class);
     private Map<ToolType, String> cachedHarvestLevel = new EnumMap<>(ToolType.class);
+    private Map<ToolType, Boolean> cachedShowProgress = new EnumMap<>(ToolType.class);
+    private int cachedExcavatorGridSize = 3;
     private int cachedLumberjackMinLeaves = 5;
     private boolean cachedVeinMinerGroupDeepslate = true;
 
@@ -262,19 +264,27 @@ public class ConfigManager {
         Map<ToolType, Boolean> unbreakableMap = new EnumMap<>(ToolType.class);
         Map<ToolType, Float> miningSpeedMap = new EnumMap<>(ToolType.class);
         Map<ToolType, String> harvestLevelMap = new EnumMap<>(ToolType.class);
+        Map<ToolType, Boolean> showProgressMap = new EnumMap<>(ToolType.class);
         for (ToolType toolType : List.of(ToolType.EXCAVATOR, ToolType.LUMBERJACK, ToolType.VEIN_MINER)) {
             String key = toolType.getConfigKey();
-            maxBlocksMap.put(toolType, config.getInt("tools." + key + ".max-blocks", 9));
+            maxBlocksMap.put(toolType, config.getInt("tools." + key + ".max-blocks", 64));
             breakSpeedMap.put(toolType, config.getInt("tools." + key + ".break-speed-ticks", 1));
             unbreakableMap.put(toolType, config.getBoolean("tools." + key + ".durability.unbreakable", false));
             miningSpeedMap.put(toolType, (float) config.getDouble("tools." + key + ".mining-speed", 0));
             harvestLevelMap.put(toolType, config.getString("tools." + key + ".harvest-level", "none"));
+            showProgressMap.put(toolType, config.getBoolean("tools." + key + ".show-progress", true));
         }
         cachedMaxBlocks = maxBlocksMap;
         cachedBreakSpeedTicks = breakSpeedMap;
         cachedUnbreakable = unbreakableMap;
         cachedMiningSpeed = miningSpeedMap;
         cachedHarvestLevel = harvestLevelMap;
+        cachedShowProgress = showProgressMap;
+
+        // Excavator-specific
+        int gridSize = config.getInt("tools.excavator.grid-size", 3);
+        if (gridSize % 2 == 0) gridSize++; // Force odd
+        cachedExcavatorGridSize = gridSize;
 
         // Excluded file materials
         Set<Material> excluded = EnumSet.noneOf(Material.class);
@@ -623,6 +633,14 @@ public class ConfigManager {
 
     public String getHarvestLevel(ToolType toolType) {
         return cachedHarvestLevel.getOrDefault(toolType, "none");
+    }
+
+    public boolean isShowProgress(ToolType toolType) {
+        return cachedShowProgress.getOrDefault(toolType, true);
+    }
+
+    public int getExcavatorGridSize() {
+        return cachedExcavatorGridSize;
     }
 
     public int getLumberjackMinLeaves() {

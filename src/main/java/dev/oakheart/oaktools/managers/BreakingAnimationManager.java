@@ -99,9 +99,10 @@ public class BreakingAnimationManager implements Listener {
         }
 
         int tickInterval = plugin.getConfigManager().getBreakSpeedTicks(toolType);
+        boolean showProgress = plugin.getConfigManager().isShowProgress(toolType);
         BreakingOperation operation = new BreakingOperation(
                 uuid, toolType, blocks, tickInterval,
-                progressMessageKey, completeMessageKey, blocks.size() + alreadyBroken);
+                progressMessageKey, completeMessageKey, blocks.size() + alreadyBroken, showProgress);
         operation.brokenCount = alreadyBroken;
         operation.accumulatedOverflow.addAll(initialOverflow);
         freezeBlocks(operation);
@@ -172,8 +173,10 @@ public class BreakingAnimationManager implements Listener {
                 clearCrackAnimation(op);
                 unfreezeBlocks(op);
                 flushOverflow(player, op);
-                plugin.getMessageManager().sendMessage(player, op.completeMessageKey,
-                        Map.of("count", String.valueOf(op.brokenCount)));
+                if (op.showProgress) {
+                    plugin.getMessageManager().sendMessage(player, op.completeMessageKey,
+                            Map.of("count", String.valueOf(op.brokenCount)));
+                }
                 iterator.remove();
                 continue;
             }
@@ -218,9 +221,11 @@ public class BreakingAnimationManager implements Listener {
             }
 
             // Send progress message
-            plugin.getMessageManager().sendMessage(player, op.progressMessageKey,
-                    Map.of("count", String.valueOf(op.brokenCount),
-                            "total", String.valueOf(op.totalBlocks)));
+            if (op.showProgress) {
+                plugin.getMessageManager().sendMessage(player, op.progressMessageKey,
+                        Map.of("count", String.valueOf(op.brokenCount),
+                                "total", String.valueOf(op.totalBlocks)));
+            }
 
             // Show crack animation on next block in queue
             sendCrackAnimation(op, player);
@@ -367,6 +372,7 @@ public class BreakingAnimationManager implements Listener {
         final String progressMessageKey;
         final String completeMessageKey;
         final int totalBlocks;
+        final boolean showProgress;
 
         int currentIndex = 0;
         int tickCounter = 0;
@@ -378,7 +384,8 @@ public class BreakingAnimationManager implements Listener {
         int crackBlockX, crackBlockY, crackBlockZ;
 
         BreakingOperation(UUID playerId, ToolType toolType, List<Block> blocks, int tickInterval,
-                          String progressMessageKey, String completeMessageKey, int totalBlocks) {
+                          String progressMessageKey, String completeMessageKey, int totalBlocks,
+                          boolean showProgress) {
             this.playerId = playerId;
             this.toolType = toolType;
             this.blocks = blocks;
@@ -386,6 +393,7 @@ public class BreakingAnimationManager implements Listener {
             this.progressMessageKey = progressMessageKey;
             this.completeMessageKey = completeMessageKey;
             this.totalBlocks = totalBlocks;
+            this.showProgress = showProgress;
         }
     }
 }

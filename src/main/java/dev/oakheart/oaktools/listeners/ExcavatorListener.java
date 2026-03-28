@@ -73,9 +73,9 @@ public class ExcavatorListener implements Listener {
 
         BlockFace face = rayTrace.getHitBlockFace();
 
-        // Calculate 3x3 grid
-        int maxBlocks = plugin.getConfigManager().getMaxBlocks(ToolType.EXCAVATOR);
-        List<Block> blocks = ExcavationCalculator.calculate(brokenBlock, face, maxBlocks);
+        // Calculate NxN grid
+        int gridSize = plugin.getConfigManager().getExcavatorGridSize();
+        List<Block> blocks = ExcavationCalculator.calculate(brokenBlock, face, gridSize);
 
         // Remove the already-broken block from the list (vanilla handles the break itself)
         blocks.removeIf(b -> b.equals(brokenBlock));
