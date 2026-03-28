@@ -9,11 +9,16 @@ import dev.oakheart.oaktools.util.Constants;
 import dev.oakheart.oaktools.util.DropHandler;
 import com.github.retrooper.packetevents.util.Vector3i;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -21,8 +26,10 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,11 +37,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Central animated block breaking system for harvesting tools.
  * Processes one block per configured tick interval per active operation.
  */
-public class BreakingAnimationManager {
+public class BreakingAnimationManager implements Listener {
 
     private final OakTools plugin;
     private final OverflowHook overflowHook;
     private final Map<UUID, BreakingOperation> activeOperations = new HashMap<>();
+    private final Set<Location> frozenBlocks = new HashSet<>();
     private BukkitTask tickTask;
     private boolean usePackets;
 
@@ -57,6 +65,7 @@ public class BreakingAnimationManager {
             tickTask = null;
         }
         activeOperations.clear();
+        frozenBlocks.clear();
     }
 
     public boolean hasActiveOperation(UUID playerId) {
@@ -85,6 +94,7 @@ public class BreakingAnimationManager {
         BreakingOperation existing = activeOperations.remove(uuid);
         if (existing != null) {
             clearCrackAnimation(existing);
+            unfreezeBlocks(existing);
         }
 
         int tickInterval = plugin.getConfigManager().getBreakSpeedTicks(toolType);
@@ -93,6 +103,7 @@ public class BreakingAnimationManager {
                 progressMessageKey, completeMessageKey, blocks.size() + alreadyBroken);
         operation.brokenCount = alreadyBroken;
         operation.accumulatedOverflow.addAll(initialOverflow);
+        freezeBlocks(operation);
         activeOperations.put(uuid, operation);
     }
 
@@ -100,6 +111,7 @@ public class BreakingAnimationManager {
         BreakingOperation operation = activeOperations.remove(playerId);
         if (operation != null) {
             clearCrackAnimation(operation);
+            unfreezeBlocks(operation);
             Player player = Bukkit.getPlayer(playerId);
             if (player != null) {
                 flushOverflow(player, operation);
@@ -120,6 +132,7 @@ public class BreakingAnimationManager {
             // Cancel if player offline or dead
             if (player == null || player.isDead()) {
                 clearCrackAnimation(op);
+                unfreezeBlocks(op);
                 iterator.remove();
                 continue;
             }
@@ -127,6 +140,7 @@ public class BreakingAnimationManager {
             // Cancel if player switched away from the tool
             if (!isHoldingToolType(player, op.toolType)) {
                 clearCrackAnimation(op);
+                unfreezeBlocks(op);
                 flushOverflow(player, op);
                 plugin.getMessageManager().sendMessage(player, "operation-cancelled");
                 iterator.remove();
@@ -136,6 +150,7 @@ public class BreakingAnimationManager {
             // Cancel if player started sneaking
             if (player.isSneaking()) {
                 clearCrackAnimation(op);
+                unfreezeBlocks(op);
                 flushOverflow(player, op);
                 plugin.getMessageManager().sendMessage(player, "operation-cancelled");
                 iterator.remove();
@@ -154,6 +169,7 @@ public class BreakingAnimationManager {
             if (block == null) {
                 // All blocks processed — operation complete
                 clearCrackAnimation(op);
+                unfreezeBlocks(op);
                 flushOverflow(player, op);
                 plugin.getMessageManager().sendMessage(player, op.completeMessageKey,
                         Map.of("count", String.valueOf(op.brokenCount)));
@@ -170,6 +186,9 @@ public class BreakingAnimationManager {
 
             // CoreProtect log BEFORE breaking
             plugin.getCoreProtectLogger().logHarvestingBreak(player, block, blockData);
+
+            // Unfreeze this block before breaking (allow physics to resume for it)
+            frozenBlocks.remove(block.getLocation());
 
             // Break block and distribute drops to inventory
             DropHandler.Result result = DropHandler.handleBlockBreak(player, block, op.toolType);
@@ -188,6 +207,7 @@ public class BreakingAnimationManager {
                     if (broken) {
                         // Tool broke — cancel remaining blocks
                         clearCrackAnimation(op);
+                        unfreezeBlocks(op);
                         flushOverflow(player, op);
                         iterator.remove();
                         continue;
@@ -274,6 +294,36 @@ public class BreakingAnimationManager {
                     Map.of("count", String.valueOf(count)));
         }
     }
+
+    // ===== Gravity block freezing =====
+
+    private void freezeBlocks(BreakingOperation op) {
+        for (Block block : op.blocks) {
+            frozenBlocks.add(block.getLocation());
+        }
+    }
+
+    private void unfreezeBlocks(BreakingOperation op) {
+        for (Block block : op.blocks) {
+            frozenBlocks.remove(block.getLocation());
+        }
+    }
+
+    /**
+     * Prevents gravity blocks (sand, gravel, etc.) from falling while they're
+     * queued for animated breaking. Without this, removing one block causes
+     * adjacent gravity blocks to fall before the animation reaches them.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        if (!frozenBlocks.isEmpty()
+                && event.getBlock().getType().hasGravity()
+                && frozenBlocks.contains(event.getBlock().getLocation())) {
+            event.setCancelled(true);
+        }
+    }
+
+    // ===== Crack animation =====
 
     private void clearCrackAnimation(BreakingOperation op) {
         if (!usePackets || op.crackEntityId == -1) return;
