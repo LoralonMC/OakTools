@@ -69,12 +69,16 @@ public class BreakingAnimationManager {
      */
     public void startOperation(Player player, ToolType toolType, List<Block> blocks,
                                String progressMessageKey, String completeMessageKey) {
-        startOperation(player, toolType, blocks, progressMessageKey, completeMessageKey, List.of());
+        startOperation(player, toolType, blocks, progressMessageKey, completeMessageKey, 0, List.of());
     }
 
+    /**
+     * @param alreadyBroken number of blocks already broken before this operation (e.g. the initial block)
+     * @param initialOverflow overflow items from blocks already broken
+     */
     public void startOperation(Player player, ToolType toolType, List<Block> blocks,
                                String progressMessageKey, String completeMessageKey,
-                               List<ItemStack> initialOverflow) {
+                               int alreadyBroken, List<ItemStack> initialOverflow) {
         UUID uuid = player.getUniqueId();
 
         // Cancel existing operation if any
@@ -86,7 +90,8 @@ public class BreakingAnimationManager {
         int tickInterval = plugin.getConfigManager().getBreakSpeedTicks(toolType);
         BreakingOperation operation = new BreakingOperation(
                 uuid, toolType, blocks, tickInterval,
-                progressMessageKey, completeMessageKey, blocks.size());
+                progressMessageKey, completeMessageKey, blocks.size() + alreadyBroken);
+        operation.brokenCount = alreadyBroken;
         operation.accumulatedOverflow.addAll(initialOverflow);
         activeOperations.put(uuid, operation);
     }

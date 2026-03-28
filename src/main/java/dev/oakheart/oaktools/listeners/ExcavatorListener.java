@@ -93,6 +93,6 @@ public class ExcavatorListener implements Listener {
 
         // Start breaking operation (pass initial overflow so it gets merged with the rest)
         breakingManager.startOperation(player, ToolType.EXCAVATOR, blocks,
-                "excavator-breaking", "excavator-complete", initialResult.overflowItems());
+                "excavator-breaking", "excavator-complete", 1, initialResult.overflowItems());
     }
 }
