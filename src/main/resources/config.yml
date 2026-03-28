@@ -424,8 +424,9 @@ tools:
     durability:
       max: 500
       use-vanilla-damage-bar: true
-      repair-material: DIAMOND
-      repair-amount: 125
+      # Set to NONE to disable anvil repair
+      repair-material: NONE
+      repair-amount: 0
       # Set to true for infinite durability (no damage taken)
       unbreakable: false
     # Locked tool — no enchantments allowed (empty list blocks all)
@@ -458,8 +459,8 @@ tools:
     durability:
       max: 1000
       use-vanilla-damage-bar: true
-      repair-material: DIAMOND
-      repair-amount: 250
+      repair-material: NONE
+      repair-amount: 0
       unbreakable: false
     allowed-enchantments: []
     recipe:
@@ -490,8 +491,8 @@ tools:
     durability:
       max: 750
       use-vanilla-damage-bar: true
-      repair-material: DIAMOND
-      repair-amount: 188
+      repair-material: NONE
+      repair-amount: 0
       unbreakable: false
     allowed-enchantments: []
     recipe:

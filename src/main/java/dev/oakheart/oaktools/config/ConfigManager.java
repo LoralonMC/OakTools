@@ -302,12 +302,14 @@ public class ConfigManager {
         for (ToolType toolType : ToolType.values()) {
             String toolLower = toolType.getConfigKey();
 
-            // Repair material
+            // Repair material (NONE = no anvil repair)
             String materialName = config.getString("tools." + toolLower + ".durability.repair-material", "IRON_INGOT");
-            try {
-                repairMats.put(toolType, Material.valueOf(materialName));
-            } catch (IllegalArgumentException e) {
-                logger.warning("Invalid repair material for " + toolType + ": " + materialName);
+            if (!materialName.equalsIgnoreCase("NONE") && !materialName.isEmpty()) {
+                try {
+                    repairMats.put(toolType, Material.valueOf(materialName));
+                } catch (IllegalArgumentException e) {
+                    logger.warning("Invalid repair material for " + toolType + ": " + materialName);
+                }
             }
 
             // Repair amount
