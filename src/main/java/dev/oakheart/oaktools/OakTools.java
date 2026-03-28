@@ -9,6 +9,7 @@ import dev.oakheart.oaktools.integration.VulcanHook;
 import dev.oakheart.oaktools.items.ItemFactory;
 import dev.oakheart.oaktools.listeners.*;
 import dev.oakheart.oaktools.managers.BreakingAnimationManager;
+import dev.oakheart.oaktools.managers.PlacedBlockTracker;
 import dev.oakheart.oaktools.managers.WandHistoryManager;
 import dev.oakheart.oaktools.managers.WandPreviewManager;
 import dev.oakheart.oaktools.message.MessageManager;
@@ -44,6 +45,7 @@ public final class OakTools extends JavaPlugin {
 
     // Harvesting tool managers
     private BreakingAnimationManager breakingAnimationManager;
+    private PlacedBlockTracker placedBlockTracker;
 
     // Integration
     private CoreProtectLogger coreProtectLogger;
@@ -104,6 +106,7 @@ public final class OakTools extends JavaPlugin {
         overflowHook.initialize();
 
         breakingAnimationManager = new BreakingAnimationManager(this, overflowHook);
+        placedBlockTracker = new PlacedBlockTracker();
 
         coreProtectLogger = new CoreProtectLogger(this);
         coreProtectLogger.initialize();
@@ -131,6 +134,8 @@ public final class OakTools extends JavaPlugin {
         // Harvesting tool listeners
         pluginManager.registerEvents(new ExcavatorListener(this, breakingAnimationManager), this);
         pluginManager.registerEvents(new VeinMinerListener(this, breakingAnimationManager), this);
+        pluginManager.registerEvents(new LumberjackListener(this, breakingAnimationManager, placedBlockTracker), this);
+        pluginManager.registerEvents(placedBlockTracker, this);
         pluginManager.registerEvents(new EnchantBlockListener(this), this);
         pluginManager.registerEvents(new ItemDamageListener(this), this);
     }

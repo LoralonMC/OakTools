@@ -13,9 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Animated breaking system with per-block break particles, sound effects, and crack animation via PacketEvents
 - Sneak while breaking to disable multi-block activation (mine single blocks normally)
 - OakOverflow integration for inventory overflow — drops go to inventory first, overflow storage second, ground last
+- Vein Miner Pickaxe harvesting tool — mines connected ore veins with deepslate variant grouping
+- Lumberjack's Axe harvesting tool — chops entire generated trees with natural leaf validation and player-placed log detection
+- PlacedBlockTracker to distinguish player-placed logs from generated trees (in-memory, same pattern as UltimateTimber)
 - Enchanting table blocked for "locked" tools (tools with empty allowed-enchantments)
 - Per-tool `unbreakable` config option for infinite durability
-- Config stubs for Lumberjack's Axe and Vein Miner Pickaxe (disabled, coming soon)
 
 ### Changed
 

@@ -440,7 +440,7 @@ tools:
     break-speed-ticks: 1
 
   lumberjack:
-    enabled: false
+    enabled: true
     display:
       enabled: true
       name: "<white>Lumberjack's Axe</white>"
