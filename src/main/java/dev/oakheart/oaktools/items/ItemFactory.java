@@ -113,8 +113,12 @@ public class ItemFactory {
         ToolComponent tool = meta.getTool();
         if (tool == null) return;
 
-        tool.setDamagePerBlock(0);
-        tool.addRule(mineableTag, null, true); // null speed = keep base material speed, correct for drops = true
+        tool.setDamagePerBlock(0); // We handle durability via PDC
+
+        if (plugin.getConfigManager().isOverrideHarvestLevel(toolType)) {
+            tool.addRule(mineableTag, null, true); // null speed = keep base material speed, correct for drops = true
+        }
+
         meta.setTool(tool);
     }
 
