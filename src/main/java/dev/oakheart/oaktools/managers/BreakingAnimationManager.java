@@ -15,10 +15,11 @@ import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -311,13 +312,13 @@ public class BreakingAnimationManager implements Listener {
 
     /**
      * Prevents gravity blocks (sand, gravel, etc.) from falling while they're
-     * queued for animated breaking. Without this, removing one block causes
-     * adjacent gravity blocks to fall before the animation reaches them.
+     * queued for animated breaking. Intercepts the block-to-falling-entity conversion
+     * directly — more reliable than BlockPhysicsEvent for this purpose.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockPhysics(BlockPhysicsEvent event) {
-        if (!frozenBlocks.isEmpty()
-                && event.getBlock().getType().hasGravity()
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        if (event.getEntity() instanceof FallingBlock
+                && !frozenBlocks.isEmpty()
                 && frozenBlocks.contains(event.getBlock().getLocation())) {
             event.setCancelled(true);
         }
