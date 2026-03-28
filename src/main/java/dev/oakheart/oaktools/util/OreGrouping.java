@@ -76,7 +76,7 @@ public class OreGrouping {
         queue.add(startBlock);
         visited.add(startBlock);
 
-        while (!queue.isEmpty() && vein.size() < maxBlocks) {
+        while (!queue.isEmpty() && vein.size() < maxBlocks - 1) { // -1 to account for the initial block
             Block current = queue.poll();
 
             // Add to vein (skip the start block — vanilla handles it)

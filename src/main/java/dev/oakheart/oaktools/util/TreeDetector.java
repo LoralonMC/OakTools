@@ -50,7 +50,7 @@ public class TreeDetector {
         queue.add(startBlock);
         visited.add(startBlock);
 
-        while (!queue.isEmpty() && logs.size() < maxBlocks) {
+        while (!queue.isEmpty() && logs.size() < maxBlocks - 1) { // -1 to account for the initial block
             Block current = queue.poll();
 
             // Add to results (skip start block — vanilla handles it)
