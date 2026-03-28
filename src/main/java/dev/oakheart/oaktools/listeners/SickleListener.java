@@ -114,8 +114,10 @@ public class SickleListener implements Listener {
             }
 
             // Drop remaining items naturally at the crop's location
+            // Tag items so OakOverflow doesn't intercept them (sickle drops are meant to stay on ground)
             for (ItemStack drop : drops) {
-                crop.getWorld().dropItemNaturally(crop.getLocation().add(0.5, 0.3, 0.5), drop);
+                crop.getWorld().dropItemNaturally(crop.getLocation().add(0.5, 0.3, 0.5), drop, entity ->
+                        entity.addScoreboardTag("oaktools_sickle_drop"));
             }
 
             harvestedCount++;
