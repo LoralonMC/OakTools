@@ -7,13 +7,16 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Handles block drop calculation and distribution for harvesting tools.
  * Uses fake vanilla tools for proper drop calculation, since the actual
- * tool items use custom base materials (e.g. WARPED_FUNGUS_ON_A_STICK).
+ * tool items use custom base materials (e.g. NETHERITE_SHOVEL).
  */
 public class DropHandler {
 
@@ -22,13 +25,10 @@ public class DropHandler {
     private static final ItemStack FAKE_PICKAXE = new ItemStack(Material.DIAMOND_PICKAXE);
 
     /**
-     * Calculates drops using the appropriate vanilla tool, breaks the block,
-     * grants XP, and distributes items to the player's inventory.
-     * Overflow goes to OakOverflow if available, otherwise drops on ground.
-     *
-     * @return the number of individual items collected
+     * Calculates drops, breaks the block, and adds items to the player's inventory.
+     * Items that don't fit are returned as overflow (caller handles batching/sending).
      */
-    public static int handleBlockBreak(Player player, Block block, ToolType toolType, OverflowHook overflowHook) {
+    public static Result handleBlockBreak(Player player, Block block, ToolType toolType) {
         ItemStack fakeTool = getFakeTool(toolType);
 
         // Calculate drops before breaking the block
@@ -37,25 +37,64 @@ public class DropHandler {
         // Break the block
         block.setType(Material.AIR);
 
-        // Distribute drops
+        return distributeDrops(player, drops);
+    }
+
+    /**
+     * Adds pre-calculated drops to the player's inventory.
+     * Used for the initial block where vanilla handles the break but we suppress drops.
+     */
+    public static Result distributeDrops(Player player, Collection<ItemStack> drops) {
         int itemCount = 0;
+        List<ItemStack> overflow = new ArrayList<>();
+
         for (ItemStack drop : drops) {
             itemCount += drop.getAmount();
-            HashMap<Integer, ItemStack> overflow = player.getInventory().addItem(drop);
+            HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(drop);
+            overflow.addAll(leftover.values());
+        }
 
-            for (ItemStack leftover : overflow.values()) {
-                if (overflowHook != null && overflowHook.isAvailable()) {
-                    overflowHook.sendToOverflow(player, leftover, leftover.getAmount());
-                } else {
-                    player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+        return new Result(itemCount, overflow);
+    }
+
+    /**
+     * Merges a list of overflow items by material type, then sends to OakOverflow.
+     * Falls back to dropping on the ground if OakOverflow is not available.
+     */
+    public static void flushOverflow(Player player, List<ItemStack> overflowItems, OverflowHook overflowHook) {
+        if (overflowItems.isEmpty()) return;
+
+        // Merge stacks by material type
+        Map<Material, Integer> merged = new HashMap<>();
+        Map<Material, ItemStack> templates = new HashMap<>();
+        for (ItemStack item : overflowItems) {
+            merged.merge(item.getType(), item.getAmount(), Integer::sum);
+            templates.putIfAbsent(item.getType(), item);
+        }
+
+        for (var entry : merged.entrySet()) {
+            Material material = entry.getKey();
+            int totalAmount = entry.getValue();
+            ItemStack template = templates.get(material);
+
+            if (overflowHook != null && overflowHook.isAvailable()) {
+                ItemStack overflowItem = template.clone();
+                overflowItem.setAmount(totalAmount);
+                overflowHook.sendToOverflow(player, overflowItem, totalAmount);
+            } else {
+                // Drop in full stacks
+                while (totalAmount > 0) {
+                    ItemStack drop = template.clone();
+                    int stackSize = Math.min(totalAmount, material.getMaxStackSize());
+                    drop.setAmount(stackSize);
+                    player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                    totalAmount -= stackSize;
                 }
             }
         }
-
-        return itemCount;
     }
 
-    private static ItemStack getFakeTool(ToolType toolType) {
+    public static ItemStack getFakeTool(ToolType toolType) {
         return switch (toolType) {
             case EXCAVATOR -> FAKE_SHOVEL;
             case LUMBERJACK -> FAKE_AXE;
@@ -63,4 +102,6 @@ public class DropHandler {
             default -> FAKE_PICKAXE;
         };
     }
+
+    public record Result(int itemCount, List<ItemStack> overflowItems) {}
 }

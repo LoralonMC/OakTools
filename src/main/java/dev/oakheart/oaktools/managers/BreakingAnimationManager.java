@@ -19,6 +19,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,12 @@ public class BreakingAnimationManager {
      */
     public void startOperation(Player player, ToolType toolType, List<Block> blocks,
                                String progressMessageKey, String completeMessageKey) {
+        startOperation(player, toolType, blocks, progressMessageKey, completeMessageKey, List.of());
+    }
+
+    public void startOperation(Player player, ToolType toolType, List<Block> blocks,
+                               String progressMessageKey, String completeMessageKey,
+                               List<ItemStack> initialOverflow) {
         UUID uuid = player.getUniqueId();
 
         // Cancel existing operation if any
@@ -81,6 +88,7 @@ public class BreakingAnimationManager {
         BreakingOperation operation = new BreakingOperation(
                 uuid, toolType, blocks, tickInterval,
                 progressMessageKey, completeMessageKey, blocks.size());
+        operation.accumulatedOverflow.addAll(initialOverflow);
         activeOperations.put(uuid, operation);
     }
 
@@ -90,6 +98,7 @@ public class BreakingAnimationManager {
             clearCrackAnimation(operation);
             Player player = Bukkit.getPlayer(playerId);
             if (player != null) {
+                flushOverflow(player, operation);
                 plugin.getMessageManager().sendMessage(player, "operation-cancelled");
             }
         }
@@ -114,6 +123,7 @@ public class BreakingAnimationManager {
             // Cancel if player switched away from the tool
             if (!isHoldingToolType(player, op.toolType)) {
                 clearCrackAnimation(op);
+                flushOverflow(player, op);
                 plugin.getMessageManager().sendMessage(player, "operation-cancelled");
                 iterator.remove();
                 continue;
@@ -122,6 +132,7 @@ public class BreakingAnimationManager {
             // Cancel if player started sneaking
             if (player.isSneaking()) {
                 clearCrackAnimation(op);
+                flushOverflow(player, op);
                 plugin.getMessageManager().sendMessage(player, "operation-cancelled");
                 iterator.remove();
                 continue;
@@ -139,6 +150,7 @@ public class BreakingAnimationManager {
             if (block == null) {
                 // All blocks processed — operation complete
                 clearCrackAnimation(op);
+                flushOverflow(player, op);
                 plugin.getMessageManager().sendMessage(player, op.completeMessageKey,
                         Map.of("count", String.valueOf(op.brokenCount)));
                 iterator.remove();
@@ -155,8 +167,9 @@ public class BreakingAnimationManager {
             // CoreProtect log BEFORE breaking
             plugin.getCoreProtectLogger().logHarvestingBreak(player, block, blockData);
 
-            // Break block and distribute drops
-            DropHandler.handleBlockBreak(player, block, op.toolType, overflowHook);
+            // Break block and distribute drops to inventory
+            DropHandler.Result result = DropHandler.handleBlockBreak(player, block, op.toolType);
+            op.accumulatedOverflow.addAll(result.overflowItems());
 
             // Play break particles and sound
             playBreakEffects(block, blockData);
@@ -171,6 +184,7 @@ public class BreakingAnimationManager {
                     if (broken) {
                         // Tool broke — cancel remaining blocks
                         clearCrackAnimation(op);
+                        flushOverflow(player, op);
                         iterator.remove();
                         continue;
                     }
@@ -247,6 +261,17 @@ public class BreakingAnimationManager {
         }
     }
 
+    private void flushOverflow(Player player, BreakingOperation op) {
+        if (!op.accumulatedOverflow.isEmpty()) {
+            DropHandler.flushOverflow(player, op.accumulatedOverflow, overflowHook);
+            int overflowCount = op.accumulatedOverflow.stream().mapToInt(ItemStack::getAmount).sum();
+            if (overflowCount > 0) {
+                plugin.getMessageManager().sendMessage(player, "inventory-overflow",
+                        Map.of("count", String.valueOf(overflowCount)));
+            }
+        }
+    }
+
     private void clearCrackAnimation(BreakingOperation op) {
         if (!usePackets || op.crackEntityId == -1) return;
 
@@ -288,6 +313,7 @@ public class BreakingAnimationManager {
         int currentIndex = 0;
         int tickCounter = 0;
         int brokenCount = 0;
+        final List<ItemStack> accumulatedOverflow = new ArrayList<>();
 
         // Crack animation tracking
         int crackEntityId = -1;
