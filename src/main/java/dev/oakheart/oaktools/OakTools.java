@@ -9,7 +9,6 @@ import dev.oakheart.oaktools.integration.VulcanHook;
 import dev.oakheart.oaktools.items.ItemFactory;
 import dev.oakheart.oaktools.listeners.*;
 import dev.oakheart.oaktools.managers.BreakingAnimationManager;
-import dev.oakheart.oaktools.managers.HarvestPreviewManager;
 import dev.oakheart.oaktools.managers.WandHistoryManager;
 import dev.oakheart.oaktools.managers.WandPreviewManager;
 import dev.oakheart.oaktools.message.MessageManager;
@@ -45,7 +44,6 @@ public final class OakTools extends JavaPlugin {
 
     // Harvesting tool managers
     private BreakingAnimationManager breakingAnimationManager;
-    private HarvestPreviewManager harvestPreviewManager;
 
     // Integration
     private CoreProtectLogger coreProtectLogger;
@@ -73,9 +71,6 @@ public final class OakTools extends JavaPlugin {
     public void onDisable() {
         if (breakingAnimationManager != null) {
             breakingAnimationManager.stop();
-        }
-        if (harvestPreviewManager != null) {
-            harvestPreviewManager.stop();
         }
         if (wandPreviewManager != null) {
             wandPreviewManager.stop();
@@ -109,8 +104,6 @@ public final class OakTools extends JavaPlugin {
         overflowHook.initialize();
 
         breakingAnimationManager = new BreakingAnimationManager(this, overflowHook);
-        harvestPreviewManager = new HarvestPreviewManager(this);
-        harvestPreviewManager.setBreakingAnimationManager(breakingAnimationManager);
 
         coreProtectLogger = new CoreProtectLogger(this);
         coreProtectLogger.initialize();
@@ -136,10 +129,9 @@ public final class OakTools extends JavaPlugin {
         pluginManager.registerEvents(new MendingListener(this), this);
 
         // Harvesting tool listeners
-        pluginManager.registerEvents(new ExcavatorListener(this, breakingAnimationManager, harvestPreviewManager), this);
+        pluginManager.registerEvents(new ExcavatorListener(this, breakingAnimationManager), this);
         pluginManager.registerEvents(new EnchantBlockListener(this), this);
         pluginManager.registerEvents(new ItemDamageListener(this), this);
-        pluginManager.registerEvents(harvestPreviewManager, this);
     }
 
     private void registerCommands() {
@@ -189,9 +181,6 @@ public final class OakTools extends JavaPlugin {
         if (breakingAnimationManager != null) {
             breakingAnimationManager.start();
         }
-        if (harvestPreviewManager != null) {
-            harvestPreviewManager.start();
-        }
     }
 
     /**
@@ -207,9 +196,6 @@ public final class OakTools extends JavaPlugin {
         }
         if (wandPreviewManager != null) {
             wandPreviewManager.restart();
-        }
-        if (harvestPreviewManager != null) {
-            harvestPreviewManager.restart();
         }
     }
 
@@ -270,10 +256,6 @@ public final class OakTools extends JavaPlugin {
 
     public BreakingAnimationManager getBreakingAnimationManager() {
         return breakingAnimationManager;
-    }
-
-    public HarvestPreviewManager getHarvestPreviewManager() {
-        return harvestPreviewManager;
     }
 
     public OverflowHook getOverflowHook() {

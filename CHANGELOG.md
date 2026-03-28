@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Excavation Shovel harvesting tool — mines a 3x3 area of shovel-mineable blocks on the clicked face with animated one-by-one breaking
 - Animated breaking system with per-block break particles, sound effects, and crack animation via PacketEvents
-- Glow outline preview for harvesting tools showing affected blocks before breaking
 - Sneak while breaking to disable multi-block activation (mine single blocks normally)
 - OakOverflow integration for inventory overflow — drops go to inventory first, overflow storage second, ground last
 - Enchanting table blocked for "locked" tools (tools with empty allowed-enchantments)

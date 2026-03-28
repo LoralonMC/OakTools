@@ -2,7 +2,6 @@ package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.managers.BreakingAnimationManager;
-import dev.oakheart.oaktools.managers.HarvestPreviewManager;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.util.ExcavationCalculator;
 import org.bukkit.Tag;
@@ -27,13 +26,10 @@ public class ExcavatorListener implements Listener {
 
     private final OakTools plugin;
     private final BreakingAnimationManager breakingManager;
-    private final HarvestPreviewManager previewManager;
 
-    public ExcavatorListener(OakTools plugin, BreakingAnimationManager breakingManager,
-                             HarvestPreviewManager previewManager) {
+    public ExcavatorListener(OakTools plugin, BreakingAnimationManager breakingManager) {
         this.plugin = plugin;
         this.breakingManager = breakingManager;
-        this.previewManager = previewManager;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -78,11 +74,6 @@ public class ExcavatorListener implements Listener {
         blocks.removeIf(b -> !plugin.getProtectionService().canBreakBlock(player, b));
 
         if (blocks.isEmpty()) return;
-
-        // Clear preview and start breaking operation
-        if (previewManager != null) {
-            previewManager.clearPreviewForPlayer(player);
-        }
 
         breakingManager.startOperation(player, ToolType.EXCAVATOR, blocks,
                 "excavator-breaking", "excavator-complete");

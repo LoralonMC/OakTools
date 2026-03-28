@@ -80,8 +80,6 @@ public class ConfigManager {
     private Map<ToolType, Integer> cachedMaxBlocks = new EnumMap<>(ToolType.class);
     private Map<ToolType, Integer> cachedBreakSpeedTicks = new EnumMap<>(ToolType.class);
     private Map<ToolType, Boolean> cachedUnbreakable = new EnumMap<>(ToolType.class);
-    private Map<ToolType, Boolean> cachedHarvestPreviewEnabled = new EnumMap<>(ToolType.class);
-    private Map<ToolType, NamedTextColor> cachedHarvestPreviewGlowColor = new EnumMap<>(ToolType.class);
     private int cachedLumberjackMinLeaves = 5;
     private boolean cachedVeinMinerGroupDeepslate = true;
 
@@ -260,23 +258,15 @@ public class ConfigManager {
         Map<ToolType, Integer> maxBlocksMap = new EnumMap<>(ToolType.class);
         Map<ToolType, Integer> breakSpeedMap = new EnumMap<>(ToolType.class);
         Map<ToolType, Boolean> unbreakableMap = new EnumMap<>(ToolType.class);
-        Map<ToolType, Boolean> harvestPreviewEnabledMap = new EnumMap<>(ToolType.class);
-        Map<ToolType, NamedTextColor> harvestPreviewColorMap = new EnumMap<>(ToolType.class);
         for (ToolType toolType : List.of(ToolType.EXCAVATOR, ToolType.LUMBERJACK, ToolType.VEIN_MINER)) {
             String key = toolType.getConfigKey();
             maxBlocksMap.put(toolType, config.getInt("tools." + key + ".max-blocks", 9));
             breakSpeedMap.put(toolType, config.getInt("tools." + key + ".break-speed-ticks", 1));
             unbreakableMap.put(toolType, config.getBoolean("tools." + key + ".durability.unbreakable", false));
-            harvestPreviewEnabledMap.put(toolType, config.getBoolean("tools." + key + ".preview.enabled", true));
-            harvestPreviewColorMap.put(toolType, parseNamedColor(
-                    config.getString("tools." + key + ".preview.glow-color", "YELLOW"),
-                    NamedTextColor.YELLOW));
         }
         cachedMaxBlocks = maxBlocksMap;
         cachedBreakSpeedTicks = breakSpeedMap;
         cachedUnbreakable = unbreakableMap;
-        cachedHarvestPreviewEnabled = harvestPreviewEnabledMap;
-        cachedHarvestPreviewGlowColor = harvestPreviewColorMap;
 
         // Excluded file materials
         Set<Material> excluded = EnumSet.noneOf(Material.class);
@@ -615,14 +605,6 @@ public class ConfigManager {
 
     public boolean isUnbreakable(ToolType toolType) {
         return cachedUnbreakable.getOrDefault(toolType, false);
-    }
-
-    public boolean isHarvestPreviewEnabled(ToolType toolType) {
-        return cachedHarvestPreviewEnabled.getOrDefault(toolType, true);
-    }
-
-    public NamedTextColor getHarvestPreviewGlowColor(ToolType toolType) {
-        return cachedHarvestPreviewGlowColor.getOrDefault(toolType, NamedTextColor.YELLOW);
     }
 
     public int getLumberjackMinLeaves() {

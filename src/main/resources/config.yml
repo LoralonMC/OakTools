@@ -438,10 +438,6 @@ tools:
     max-blocks: 9
     # Ticks between each block break in the animation (1 = fastest)
     break-speed-ticks: 1
-    preview:
-      enabled: true
-      # Glow outline color (same options as wand preview)
-      glow-color: YELLOW
 
   lumberjack:
     enabled: false
@@ -472,9 +468,6 @@ tools:
     break-speed-ticks: 1
     # Minimum natural leaves nearby to qualify as a generated tree
     min-leaves: 5
-    preview:
-      enabled: true
-      glow-color: YELLOW
 
   vein-miner:
     enabled: false
@@ -505,9 +498,6 @@ tools:
     break-speed-ticks: 1
     # Treat deepslate ore variants as the same vein (e.g. iron_ore + deepslate_iron_ore)
     group-deepslate: true
-    preview:
-      enabled: true
-      glow-color: YELLOW
 
 # ============================================================
 # INTEGRATION SETTINGS
