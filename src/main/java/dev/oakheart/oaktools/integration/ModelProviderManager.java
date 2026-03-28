@@ -70,8 +70,7 @@ public class ModelProviderManager {
 
         String modelId = config.getString(path, "");
         if (modelId.isEmpty()) {
-            logger.warning("No model-id configured for " + toolType.name());
-            return false;
+            return false; // Empty = no custom model (intentional)
         }
 
         return applyModelString(item, toolType, modelId);
