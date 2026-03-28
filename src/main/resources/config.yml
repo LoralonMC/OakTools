@@ -413,7 +413,9 @@ tools:
       enabled: true
       name: "<white>Excavation Shovel</white>"
       lore: []
-    base-material: NETHERITE_SHOVEL
+    # Base material controls mining speed (stone = slower, balanced for crate items)
+    # Harvest level is overridden — all blocks in the tool's category drop correctly
+    base-material: STONE_SHOVEL
     model-id: ""
     durability:
       max: 500
@@ -445,7 +447,7 @@ tools:
       enabled: true
       name: "<white>Lumberjack's Axe</white>"
       lore: []
-    base-material: NETHERITE_AXE
+    base-material: STONE_AXE
     model-id: ""
     durability:
       max: 1000
@@ -475,7 +477,7 @@ tools:
       enabled: true
       name: "<white>Vein Miner Pickaxe</white>"
       lore: []
-    base-material: NETHERITE_PICKAXE
+    base-material: STONE_PICKAXE
     model-id: ""
     durability:
       max: 750

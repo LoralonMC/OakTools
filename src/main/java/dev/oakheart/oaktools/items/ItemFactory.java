@@ -6,9 +6,11 @@ import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.model.WandMode;
 import dev.oakheart.oaktools.util.Constants;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -47,6 +49,9 @@ public class ItemFactory {
         if (toolType == ToolType.WAND) {
             pdc.set(Constants.WAND_MODE, PersistentDataType.STRING, WandMode.FACE.name());
         }
+
+        // Override tool component for harvesting tools so any base material can mine all blocks
+        applyToolComponent(meta, toolType);
 
         if (plugin.getConfigManager().isUseVanillaDamageBar(toolType) && meta instanceof Damageable damageable) {
             int vanillaMaxDurability = baseMaterial.getMaxDurability();
@@ -88,6 +93,29 @@ public class ItemFactory {
 
         String typeString = meta.getPersistentDataContainer().get(Constants.TOOL_TYPE, PersistentDataType.STRING);
         return ToolType.fromString(typeString);
+    }
+
+    /**
+     * Overrides the tool component on harvesting tools so any base material
+     * can mine all blocks in the relevant category (e.g. stone pickaxe mines diamond ore).
+     * Also sets damagePerBlock=0 since we handle durability via PDC.
+     */
+    private void applyToolComponent(ItemMeta meta, ToolType toolType) {
+        Tag<Material> mineableTag = switch (toolType) {
+            case EXCAVATOR -> Tag.MINEABLE_SHOVEL;
+            case LUMBERJACK -> Tag.MINEABLE_AXE;
+            case VEIN_MINER -> Tag.MINEABLE_PICKAXE;
+            default -> null;
+        };
+
+        if (mineableTag == null) return;
+
+        ToolComponent tool = meta.getTool();
+        if (tool == null) return;
+
+        tool.setDamagePerBlock(0);
+        tool.addRule(mineableTag, null, true); // null speed = keep base material speed, correct for drops = true
+        meta.setTool(tool);
     }
 
     private int calculateVanillaDamage(int currentDamage, int maxDurability, int vanillaMaxDurability) {
