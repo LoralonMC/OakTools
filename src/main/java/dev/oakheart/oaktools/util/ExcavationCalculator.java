@@ -1,5 +1,6 @@
 package dev.oakheart.oaktools.util;
 
+import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -8,21 +9,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Calculates the 3x3 grid of shovel-mineable blocks on a given face.
- * Shared by both the preview system and the excavator listener.
+ * Calculates the 3x3 grid of matching blocks on a given face for the Excavation Shovel.
+ * Only includes blocks of the same material type as the center block.
  */
 public class ExcavationCalculator {
 
     /**
-     * Calculates blocks in a 3x3 grid on the given face, filtered to shovel-mineable blocks.
+     * Calculates blocks in a 3x3 grid on the given face, filtered to the same material
+     * as the center block and shovel-mineable.
      *
      * @param center    the block that was clicked/targeted
      * @param face      the face of the block that was clicked
      * @param maxBlocks maximum number of blocks to return
-     * @return list of valid shovel-mineable blocks (may be less than 9 if some aren't mineable)
+     * @return list of matching blocks (may be less than 9 if some don't match)
      */
     public static List<Block> calculate(Block center, BlockFace face, int maxBlocks) {
         List<Block> blocks = new ArrayList<>();
+        Material targetMaterial = center.getType();
 
         // Determine the two axes perpendicular to the face normal
         BlockFace[] axes = getPerpendicularAxes(face);
@@ -36,7 +39,7 @@ public class ExcavationCalculator {
                         axis1.getModY() * a + axis2.getModY() * b,
                         axis1.getModZ() * a + axis2.getModZ() * b);
 
-                if (Tag.MINEABLE_SHOVEL.isTagged(target.getType())) {
+                if (target.getType() == targetMaterial) {
                     blocks.add(target);
                 }
             }
