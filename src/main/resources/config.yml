@@ -569,7 +569,7 @@ tools:
       gold:
         display-name: "Golden Sickle"
         model-id: ""
-        radius: 1
+        radius: 5
         recipe:
           enabled: true
           category: EQUIPMENT
