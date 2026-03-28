@@ -72,11 +72,11 @@ public class OakToolsCommand {
                                             return builder.buildFuture();
                                         })
                                         .executes(ctx -> handleGive(ctx, -1, false))
-                                        .then(Commands.literal("-silent")
+                                        .then(Commands.literal("silent")
                                                 .executes(ctx -> handleGive(ctx, -1, true)))
                                         .then(Commands.argument("durability", IntegerArgumentType.integer(1))
                                                 .executes(ctx -> handleGive(ctx, IntegerArgumentType.getInteger(ctx, "durability"), false))
-                                                .then(Commands.literal("-silent")
+                                                .then(Commands.literal("silent")
                                                         .executes(ctx -> handleGive(ctx, IntegerArgumentType.getInteger(ctx, "durability"), true)))))))
                 .then(Commands.literal("reload")
                         .requires(src -> src.getSender().hasPermission("oaktools.reload"))
