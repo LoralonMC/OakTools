@@ -270,6 +270,10 @@ public class BreakingAnimationManager implements Listener {
     private void sendCrackAnimation(BreakingOperation op, Player player) {
         if (!usePackets) return;
 
+        // Clear previous crack before showing a new one (prevents lingering cracks
+        // on blocks that were already broken — visible when sand falls into those positions)
+        clearCrackAnimation(op);
+
         // Find next block to show crack on
         int peekIndex = op.currentIndex;
         while (peekIndex < op.blocks.size()) {
