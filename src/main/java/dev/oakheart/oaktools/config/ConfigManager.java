@@ -95,6 +95,7 @@ public class ConfigManager {
     private Map<String, String> cachedSickleDisplayName = new HashMap<>();
     private Map<String, String> cachedSickleModelId = new HashMap<>();
     private Set<String> cachedSickleTiers = new HashSet<>();
+    private Set<Material> cachedSickleClearableVegetation = EnumSet.noneOf(Material.class);
 
     // CoreProtect integration
     private boolean cachedCoreProtectEnabled = true;
@@ -321,6 +322,16 @@ public class ConfigManager {
         cachedSickleDisplayName = sickleNames;
         cachedSickleModelId = sickleModels;
         cachedSickleTiers = sickleTierSet;
+
+        Set<Material> clearableVeg = EnumSet.noneOf(Material.class);
+        for (String name : config.getStringList("tools.sickle.clearable-vegetation")) {
+            try {
+                clearableVeg.add(Material.valueOf(name));
+            } catch (IllegalArgumentException e) {
+                logger.warning("Invalid clearable-vegetation material: " + name);
+            }
+        }
+        cachedSickleClearableVegetation = clearableVeg;
 
         // Excluded file materials
         Set<Material> excluded = EnumSet.noneOf(Material.class);
@@ -677,6 +688,10 @@ public class ConfigManager {
 
     public int getExcavatorGridSize() {
         return cachedExcavatorGridSize;
+    }
+
+    public Set<Material> getSickleClearableVegetation() {
+        return cachedSickleClearableVegetation;
     }
 
     public int getLumberjackMinLeaves() {

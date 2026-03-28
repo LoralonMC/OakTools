@@ -42,21 +42,6 @@ public class SickleListener implements Listener {
             Material.PITCHER_CROP, Material.PITCHER_POD
     );
 
-    private static final Set<Material> CLEARABLE_VEGETATION = Set.of(
-            // Grass & ferns
-            Material.SHORT_GRASS, Material.TALL_GRASS,
-            Material.FERN, Material.LARGE_FERN,
-            // Dead bush
-            Material.DEAD_BUSH,
-            // Small flowers
-            Material.DANDELION, Material.POPPY, Material.BLUE_ORCHID,
-            Material.ALLIUM, Material.AZURE_BLUET, Material.RED_TULIP,
-            Material.ORANGE_TULIP, Material.WHITE_TULIP, Material.PINK_TULIP,
-            Material.OXEYE_DAISY, Material.CORNFLOWER, Material.LILY_OF_THE_VALLEY,
-            Material.TORCHFLOWER, Material.WITHER_ROSE,
-            // Tall flowers
-            Material.SUNFLOWER, Material.LILAC, Material.ROSE_BUSH, Material.PEONY
-    );
 
     private final OakTools plugin;
 
@@ -79,7 +64,7 @@ public class SickleListener implements Listener {
 
         Block brokenBlock = event.getBlock();
 
-        if (CLEARABLE_VEGETATION.contains(brokenBlock.getType())) {
+        if (plugin.getConfigManager().getSickleClearableVegetation().contains(brokenBlock.getType())) {
             handleGrassClearing(event, player, item, brokenBlock);
         } else if (brokenBlock.getBlockData() instanceof Ageable ageable
                 && ageable.getAge() >= ageable.getMaximumAge()
@@ -161,7 +146,7 @@ public class SickleListener implements Listener {
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 Block candidate = brokenBlock.getRelative(dx, 0, dz);
-                if (CLEARABLE_VEGETATION.contains(candidate.getType())) {
+                if (plugin.getConfigManager().getSickleClearableVegetation().contains(candidate.getType())) {
                     grassBlocks.add(candidate);
                 }
             }
