@@ -470,7 +470,7 @@ tools:
     min-leaves: 5
 
   vein-miner:
-    enabled: false
+    enabled: true
     display:
       enabled: true
       name: "<white>Vein Miner Pickaxe</white>"

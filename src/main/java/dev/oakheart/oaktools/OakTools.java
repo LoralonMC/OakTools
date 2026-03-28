@@ -130,6 +130,7 @@ public final class OakTools extends JavaPlugin {
 
         // Harvesting tool listeners
         pluginManager.registerEvents(new ExcavatorListener(this, breakingAnimationManager), this);
+        pluginManager.registerEvents(new VeinMinerListener(this, breakingAnimationManager), this);
         pluginManager.registerEvents(new EnchantBlockListener(this), this);
         pluginManager.registerEvents(new ItemDamageListener(this), this);
     }
