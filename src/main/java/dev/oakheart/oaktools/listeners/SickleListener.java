@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -39,6 +40,11 @@ public class SickleListener implements Listener {
             Material.SWEET_BERRY_BUSH, Material.SWEET_BERRIES,
             Material.TORCHFLOWER_CROP, Material.TORCHFLOWER_SEEDS,
             Material.PITCHER_CROP, Material.PITCHER_POD
+    );
+
+    private static final Set<Material> GRASS_TYPES = Set.of(
+            Material.SHORT_GRASS, Material.TALL_GRASS,
+            Material.FERN, Material.LARGE_FERN
     );
 
     private final OakTools plugin;
@@ -61,19 +67,25 @@ public class SickleListener implements Listener {
         if (!plugin.getConfigManager().isWorldAllowed(player.getWorld().getName())) return;
 
         Block brokenBlock = event.getBlock();
-        if (!(brokenBlock.getBlockData() instanceof Ageable ageable)) return;
-        if (ageable.getAge() < ageable.getMaximumAge()) return; // Not mature
 
-        if (!SEED_MAP.containsKey(brokenBlock.getType())) return; // Not a supported crop
+        if (GRASS_TYPES.contains(brokenBlock.getType())) {
+            handleGrassClearing(event, player, item, brokenBlock);
+        } else if (brokenBlock.getBlockData() instanceof Ageable ageable
+                && ageable.getAge() >= ageable.getMaximumAge()
+                && SEED_MAP.containsKey(brokenBlock.getType())) {
+            handleCropHarvest(event, player, item, brokenBlock);
+        }
+    }
 
+    // ===== Crop harvesting =====
+
+    private void handleCropHarvest(BlockBreakEvent event, Player player, ItemStack item, Block brokenBlock) {
         String tier = plugin.getItemFactory().getToolTier(item);
         if (tier == null) return;
         int radius = plugin.getConfigManager().getSickleRadius(tier);
 
-        // Cancel vanilla break — we handle everything (break, drops, replant, durability)
         event.setCancelled(true);
 
-        // Collect crops to harvest (any mature supported crop in area, not just same type)
         List<Block> crops = new ArrayList<>();
         crops.add(brokenBlock);
 
@@ -95,17 +107,11 @@ public class SickleListener implements Listener {
 
         for (Block crop : crops) {
             Material seedMaterial = SEED_MAP.get(crop.getType());
-
-            // Calculate drops using the player's actual sickle (respects Fortune)
             Collection<ItemStack> drops = crop.getDrops(item, player);
-
-            // Remove one seed for replanting
             boolean seedConsumed = removeSeed(drops, seedMaterial);
 
-            // CoreProtect logging (before modifying the block)
             plugin.getCoreProtectLogger().logHarvestingBreak(player, crop, crop.getBlockData());
 
-            // Replant the crop at growth stage 0, or clear if no seed
             if (seedConsumed && crop.getBlockData() instanceof Ageable cropData) {
                 cropData.setAge(0);
                 crop.setBlockData(cropData);
@@ -113,8 +119,6 @@ public class SickleListener implements Listener {
                 crop.setType(Material.AIR);
             }
 
-            // Drop remaining items naturally at the crop's location
-            // Tag items so OakOverflow doesn't intercept them (sickle drops are meant to stay on ground)
             for (ItemStack drop : drops) {
                 crop.getWorld().dropItemNaturally(crop.getLocation().add(0.5, 0.3, 0.5), drop, entity ->
                         entity.addScoreboardTag("oaktools_sickle_drop"));
@@ -122,28 +126,83 @@ public class SickleListener implements Listener {
 
             harvestedCount++;
 
-            // Durability damage for each crop (respects Unbreaking)
-            if (shouldConsumeDurability(unbreakingLevel)) {
-                ItemMeta meta = item.getItemMeta();
-                if (meta instanceof Damageable damageable) {
-                    int newDamage = damageable.getDamage() + 1;
-                    if (newDamage >= item.getType().getMaxDurability()) {
-                        player.getInventory().setItemInMainHand(null);
-                        player.getWorld().playSound(player.getLocation(),
-                                org.bukkit.Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
-                        break;
-                    }
-                    damageable.setDamage(newDamage);
-                    item.setItemMeta(meta);
-                }
-            }
+            if (damageToolAndCheckBreak(item, player, unbreakingLevel)) break;
         }
 
-        // Send harvest message
         if (harvestedCount > 1) {
             plugin.getMessageManager().sendMessage(player, "sickle-harvested",
                     Map.of("count", String.valueOf(harvestedCount)));
         }
+    }
+
+    // ===== Grass clearing =====
+
+    private void handleGrassClearing(BlockBreakEvent event, Player player, ItemStack item, Block brokenBlock) {
+        String tier = plugin.getItemFactory().getToolTier(item);
+        if (tier == null) return;
+        int radius = plugin.getConfigManager().getSickleRadius(tier);
+
+        if (player.isSneaking() || radius == 0) return; // Let vanilla handle single grass break
+
+        event.setCancelled(true);
+
+        List<Block> grassBlocks = new ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                Block candidate = brokenBlock.getRelative(dx, 0, dz);
+                if (GRASS_TYPES.contains(candidate.getType())) {
+                    grassBlocks.add(candidate);
+                }
+            }
+        }
+
+        int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
+        int clearedCount = 0;
+
+        for (Block grass : grassBlocks) {
+            Collection<ItemStack> drops = grass.getDrops(item, player);
+
+            plugin.getCoreProtectLogger().logHarvestingBreak(player, grass, grass.getBlockData());
+            grass.setType(Material.AIR);
+
+            for (ItemStack drop : drops) {
+                grass.getWorld().dropItemNaturally(grass.getLocation().add(0.5, 0.3, 0.5), drop, entity ->
+                        entity.addScoreboardTag("oaktools_sickle_drop"));
+            }
+
+            clearedCount++;
+
+            if (damageToolAndCheckBreak(item, player, unbreakingLevel)) break;
+        }
+
+        if (clearedCount > 1) {
+            plugin.getMessageManager().sendMessage(player, "sickle-harvested",
+                    Map.of("count", String.valueOf(clearedCount)));
+        }
+    }
+
+    // ===== Shared durability handling =====
+
+    /**
+     * Applies one durability damage (respecting Unbreaking) and breaks the tool if depleted.
+     * Returns true if the tool broke (caller should stop processing).
+     */
+    private boolean damageToolAndCheckBreak(ItemStack item, Player player, int unbreakingLevel) {
+        if (!shouldConsumeDurability(unbreakingLevel)) return false;
+
+        ItemMeta meta = item.getItemMeta();
+        if (!(meta instanceof Damageable damageable)) return false;
+
+        int newDamage = damageable.getDamage() + 1;
+        if (newDamage >= item.getType().getMaxDurability()) {
+            player.getInventory().setItemInMainHand(null);
+            player.getWorld().playSound(player.getLocation(),
+                    org.bukkit.Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+            return true;
+        }
+        damageable.setDamage(newDamage);
+        item.setItemMeta(meta);
+        return false;
     }
 
     /**
