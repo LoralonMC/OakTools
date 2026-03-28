@@ -38,6 +38,10 @@ public class BreakingAnimationManager {
     private BukkitTask tickTask;
     private boolean usePackets;
 
+    // Per-player overflow buffer with debounced flush (merges across rapid operations)
+    private final Map<UUID, List<ItemStack>> overflowBuffer = new HashMap<>();
+    private final Map<UUID, BukkitTask> overflowFlushTasks = new HashMap<>();
+
     // Fake entity IDs for block break animation packets
     private static final AtomicInteger ANIMATION_ENTITY_ID = new AtomicInteger(2_000_000_000);
 
@@ -56,7 +60,12 @@ public class BreakingAnimationManager {
             tickTask.cancel();
             tickTask = null;
         }
-        // Cancel all active operations without sending messages (plugin shutting down)
+        // Cancel pending overflow flush tasks
+        for (BukkitTask task : overflowFlushTasks.values()) {
+            task.cancel();
+        }
+        overflowFlushTasks.clear();
+        overflowBuffer.clear();
         activeOperations.clear();
     }
 
@@ -261,15 +270,38 @@ public class BreakingAnimationManager {
         }
     }
 
+    /**
+     * Adds overflow items to a per-player buffer. The buffer is flushed (merged and sent)
+     * after 20 ticks of no new additions, so rapid consecutive operations produce one
+     * merged overflow entry instead of many small ones.
+     */
     private void flushOverflow(Player player, BreakingOperation op) {
-        if (!op.accumulatedOverflow.isEmpty()) {
-            DropHandler.flushOverflow(player, op.accumulatedOverflow, overflowHook);
-            int overflowCount = op.accumulatedOverflow.stream().mapToInt(ItemStack::getAmount).sum();
-            if (overflowCount > 0) {
-                plugin.getMessageManager().sendMessage(player, "inventory-overflow",
-                        Map.of("count", String.valueOf(overflowCount)));
+        if (op.accumulatedOverflow.isEmpty()) return;
+
+        UUID uuid = player.getUniqueId();
+        overflowBuffer.computeIfAbsent(uuid, k -> new ArrayList<>()).addAll(op.accumulatedOverflow);
+
+        // Cancel existing flush task (debounce)
+        BukkitTask existing = overflowFlushTasks.remove(uuid);
+        if (existing != null) existing.cancel();
+
+        // Schedule flush after 20 ticks (1 second)
+        BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            overflowFlushTasks.remove(uuid);
+            List<ItemStack> buffer = overflowBuffer.remove(uuid);
+            if (buffer == null || buffer.isEmpty()) return;
+
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) return;
+
+            DropHandler.flushOverflow(p, buffer, overflowHook);
+            int count = buffer.stream().mapToInt(ItemStack::getAmount).sum();
+            if (count > 0) {
+                plugin.getMessageManager().sendMessage(p, "inventory-overflow",
+                        Map.of("count", String.valueOf(count)));
             }
-        }
+        }, 20L);
+        overflowFlushTasks.put(uuid, task);
     }
 
     private void clearCrackAnimation(BreakingOperation op) {
