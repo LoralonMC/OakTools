@@ -16,5 +16,6 @@ public class Constants {
     public static final NamespacedKey MAX_DURABILITY = NamespacedKey.fromString("oaktools:max_dur");
     public static final NamespacedKey FEED_SOURCE = NamespacedKey.fromString("oaktools:feed_source");
     public static final NamespacedKey WAND_MODE = NamespacedKey.fromString("oaktools:wand_mode");
+    public static final NamespacedKey TOOL_TIER = NamespacedKey.fromString("oaktools:tier");
     public static final NamespacedKey PREVIEW_ENTITY = NamespacedKey.fromString("oaktools:preview");
 }

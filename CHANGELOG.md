@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vein Miner Pickaxe harvesting tool — mines connected ore veins with deepslate variant grouping
 - Lumberjack's Axe harvesting tool — chops entire generated trees with natural leaf validation and player-placed log detection
 - PlacedBlockTracker to distinguish player-placed logs from generated trees (in-memory, same pattern as UltimateTimber)
+- Sickle tool — tiered crop harvesting with auto-replant (wooden through netherite, vanilla durability/enchanting/repair)
 - Enchanting table blocked for "locked" tools (tools with empty allowed-enchantments)
 - Per-tool `unbreakable` config option for infinite durability
 

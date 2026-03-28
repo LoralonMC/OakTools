@@ -47,6 +47,8 @@ permissions:
       oaktools.craft.excavator: true
       oaktools.craft.lumberjack: true
       oaktools.craft.veinminer: true
+      oaktools.use.sickle: true
+      oaktools.craft.sickle: true
       oaktools.repair.anvil: true
       oaktools.bypass.protection: true
   oaktools.give:
@@ -99,6 +101,12 @@ permissions:
     default: true
   oaktools.craft.veinminer:
     description: 'Craft the Vein Miner Pickaxe'
+    default: true
+  oaktools.use.sickle:
+    description: 'Use the Sickle tool'
+    default: true
+  oaktools.craft.sickle:
+    description: 'Craft the Sickle tool'
     default: true
   oaktools.bypass.protection:
     description: 'Use tools in protected regions'

@@ -49,6 +49,11 @@ public class AnvilListener implements Listener {
             return;
         }
 
+        // Sickles use vanilla anvil behavior — skip custom enchant/repair filtering
+        if (toolType == ToolType.SICKLE) {
+            return;
+        }
+
         HumanEntity viewer = event.getViewers().isEmpty() ? null : event.getViewers().getFirst();
         if (viewer != null && !viewer.hasPermission("oaktools.repair.anvil")) {
             event.setResult(null);
@@ -90,6 +95,11 @@ public class AnvilListener implements Listener {
 
         ToolType toolType = plugin.getItemFactory().getToolType(first);
         if (toolType == null) {
+            return;
+        }
+
+        // Sickles use vanilla anvil behavior
+        if (toolType == ToolType.SICKLE) {
             return;
         }
 

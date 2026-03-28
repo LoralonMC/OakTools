@@ -1,6 +1,7 @@
 package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
+import dev.oakheart.oaktools.model.ToolType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemDamageEvent;
@@ -21,8 +22,11 @@ public class ItemDamageListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onItemDamage(PlayerItemDamageEvent event) {
-        if (plugin.getItemFactory().isTool(event.getItem())) {
-            event.setCancelled(true);
-        }
+        if (!plugin.getItemFactory().isTool(event.getItem())) return;
+
+        // Sickles use vanilla durability — don't cancel
+        if (plugin.getItemFactory().getToolType(event.getItem()) == ToolType.SICKLE) return;
+
+        event.setCancelled(true);
     }
 }

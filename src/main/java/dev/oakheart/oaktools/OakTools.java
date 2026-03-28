@@ -138,6 +138,7 @@ public final class OakTools extends JavaPlugin {
         pluginManager.registerEvents(new LumberjackListener(this, breakingAnimationManager, placedBlockTracker), this);
         pluginManager.registerEvents(placedBlockTracker, this);
         pluginManager.registerEvents(new EnchantBlockListener(this), this);
+        pluginManager.registerEvents(new SickleListener(this), this);
         pluginManager.registerEvents(new ItemDamageListener(this), this);
     }
 

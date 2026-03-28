@@ -56,7 +56,15 @@ public class OakToolsCommand {
                                         .suggests((ctx, builder) -> {
                                             String input = builder.getRemainingLowerCase();
                                             for (ToolType type : ToolType.values()) {
+                                                if (type == ToolType.SICKLE) continue; // Sickles use tier format
                                                 String name = type.name().toLowerCase();
+                                                if (name.startsWith(input)) {
+                                                    builder.suggest(name);
+                                                }
+                                            }
+                                            // Add sickle tier suggestions
+                                            for (String tier : plugin.getConfigManager().getSickleTiers()) {
+                                                String name = "sickle_" + tier;
                                                 if (name.startsWith(input)) {
                                                     builder.suggest(name);
                                                 }
@@ -112,7 +120,29 @@ public class OakToolsCommand {
             return Command.SINGLE_SUCCESS;
         }
 
-        String toolArg = StringArgumentType.getString(ctx, "tool");
+        String toolArg = StringArgumentType.getString(ctx, "tool").toLowerCase();
+
+        // Handle sickle_<tier> format
+        if (toolArg.startsWith("sickle_")) {
+            String tier = toolArg.substring("sickle_".length());
+            if (!plugin.getConfigManager().getSickleTiers().contains(tier)) {
+                plugin.getMessageManager().sendCommandMessage(sender, "give.invalid-tool");
+                return Command.SINGLE_SUCCESS;
+            }
+
+            ItemStack tool = plugin.getItemFactory().createSickle(tier);
+            target.getInventory().addItem(tool);
+
+            String displayName = plugin.getConfigManager().getSickleDisplayName(tier);
+            // Strip MiniMessage tags for plain text in command feedback
+            String plainName = displayName.replaceAll("<[^>]+>", "");
+            plugin.getMessageManager().sendCommandMessage(sender, "give.success-sender",
+                    Map.of("tool", plainName, "player", target.getName()));
+            plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
+                    Map.of("tool", plainName));
+            return Command.SINGLE_SUCCESS;
+        }
+
         ToolType toolType;
         try {
             toolType = ToolType.valueOf(toolArg.toUpperCase());

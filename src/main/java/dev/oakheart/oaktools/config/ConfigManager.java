@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,14 @@ public class ConfigManager {
     private int cachedExcavatorGridSize = 3;
     private int cachedLumberjackMinLeaves = 5;
     private boolean cachedVeinMinerGroupDeepslate = true;
+
+    // Sickle settings
+    private boolean cachedSickleEnabled = true;
+    private Map<String, Integer> cachedSickleRadius = new HashMap<>();
+    private Map<String, Material> cachedSickleBaseMaterial = new HashMap<>();
+    private Map<String, String> cachedSickleDisplayName = new HashMap<>();
+    private Map<String, String> cachedSickleModelId = new HashMap<>();
+    private Set<String> cachedSickleTiers = new HashSet<>();
 
     // CoreProtect integration
     private boolean cachedCoreProtectEnabled = true;
@@ -285,6 +294,33 @@ public class ConfigManager {
         int gridSize = config.getInt("tools.excavator.grid-size", 3);
         if (gridSize % 2 == 0) gridSize++; // Force odd
         cachedExcavatorGridSize = gridSize;
+
+        // Sickle tiers
+        cachedSickleEnabled = config.getBoolean("tools.sickle.enabled", true);
+        Map<String, Integer> sickleRadii = new HashMap<>();
+        Map<String, Material> sickleMats = new HashMap<>();
+        Map<String, String> sickleNames = new HashMap<>();
+        Map<String, String> sickleModels = new HashMap<>();
+        Set<String> sickleTierSet = new HashSet<>();
+        var tiersSection = config.getConfigurationSection("tools.sickle.tiers");
+        if (tiersSection != null) {
+            for (String tier : tiersSection.getKeys(false)) {
+                sickleTierSet.add(tier);
+                sickleRadii.put(tier, tiersSection.getInt(tier + ".radius", 0));
+                sickleNames.put(tier, tiersSection.getString(tier + ".display-name",
+                        "<white>" + capitalize(tier) + " Sickle</white>"));
+                sickleModels.put(tier, tiersSection.getString(tier + ".model-id", ""));
+
+                // Derive base material from tier name if not explicitly set
+                Material baseMat = deriveSickleBaseMaterial(tier);
+                sickleMats.put(tier, baseMat);
+            }
+        }
+        cachedSickleRadius = sickleRadii;
+        cachedSickleBaseMaterial = sickleMats;
+        cachedSickleDisplayName = sickleNames;
+        cachedSickleModelId = sickleModels;
+        cachedSickleTiers = sickleTierSet;
 
         // Excluded file materials
         Set<Material> excluded = EnumSet.noneOf(Material.class);
@@ -666,6 +702,49 @@ public class ConfigManager {
             return fallback;
         }
         return color;
+    }
+
+    // Sickle getters
+
+    public boolean isSickleEnabled() {
+        return cachedSickleEnabled;
+    }
+
+    public Set<String> getSickleTiers() {
+        return cachedSickleTiers;
+    }
+
+    public int getSickleRadius(String tier) {
+        return cachedSickleRadius.getOrDefault(tier, 0);
+    }
+
+    public Material getSickleBaseMaterial(String tier) {
+        return cachedSickleBaseMaterial.getOrDefault(tier, Material.WOODEN_HOE);
+    }
+
+    public String getSickleDisplayName(String tier) {
+        return cachedSickleDisplayName.getOrDefault(tier, "<white>Sickle</white>");
+    }
+
+    public String getSickleModelId(String tier) {
+        return cachedSickleModelId.getOrDefault(tier, "");
+    }
+
+    private static Material deriveSickleBaseMaterial(String tier) {
+        return switch (tier.toLowerCase()) {
+            case "wooden" -> Material.WOODEN_HOE;
+            case "stone" -> Material.STONE_HOE;
+            case "iron" -> Material.IRON_HOE;
+            case "gold" -> Material.GOLDEN_HOE;
+            case "diamond" -> Material.DIAMOND_HOE;
+            case "netherite" -> Material.NETHERITE_HOE;
+            default -> Material.WOODEN_HOE;
+        };
+    }
+
+    private static String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
 
     public String getMessage(String key) {

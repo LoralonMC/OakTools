@@ -516,6 +516,89 @@ tools:
     # Treat deepslate ore variants as the same vein (e.g. iron_ore + deepslate_iron_ore)
     group-deepslate: true
 
+  # ============================================================
+  # SICKLE — Crop Harvesting Tool
+  # ============================================================
+  # Vanilla-feel tiered tool. Harvests mature crops in an area and replants.
+  # Uses vanilla durability, enchanting, repair — fully craftable.
+  sickle:
+    enabled: true
+    tiers:
+      wooden:
+        display-name: "<white>Wooden Sickle</white>"
+        model-id: ""
+        radius: 0
+        recipe:
+          enabled: true
+          category: EQUIPMENT
+          shape:
+            - " PP"
+            - "  P"
+            - " S "
+          ingredients:
+            P: "#planks"
+            S: STICK
+      stone:
+        display-name: "<white>Stone Sickle</white>"
+        model-id: ""
+        radius: 1
+        recipe:
+          enabled: true
+          category: EQUIPMENT
+          shape:
+            - " CC"
+            - "  C"
+            - " S "
+          ingredients:
+            C: COBBLESTONE
+            S: STICK
+      iron:
+        display-name: "<white>Iron Sickle</white>"
+        model-id: ""
+        radius: 2
+        recipe:
+          enabled: true
+          category: EQUIPMENT
+          shape:
+            - " II"
+            - "  I"
+            - " S "
+          ingredients:
+            I: IRON_INGOT
+            S: STICK
+      gold:
+        display-name: "<white>Golden Sickle</white>"
+        model-id: ""
+        radius: 1
+        recipe:
+          enabled: true
+          category: EQUIPMENT
+          shape:
+            - " GG"
+            - "  G"
+            - " S "
+          ingredients:
+            G: GOLD_INGOT
+            S: STICK
+      diamond:
+        display-name: "<white>Diamond Sickle</white>"
+        model-id: ""
+        radius: 3
+        recipe:
+          enabled: true
+          category: EQUIPMENT
+          shape:
+            - " DD"
+            - "  D"
+            - " S "
+          ingredients:
+            D: DIAMOND
+            S: STICK
+      netherite:
+        display-name: "<white>Netherite Sickle</white>"
+        model-id: ""
+        radius: 4
+
 # ============================================================
 # INTEGRATION SETTINGS
 # ============================================================
@@ -609,6 +692,12 @@ messages:
     display: action_bar
   inventory-overflow:
     text: "<#D89B6A><count> items sent to overflow storage."
+    display: action_bar
+  sickle-harvested:
+    text: "<#8FAA87>Harvested <#FCD472><count><#8FAA87> crops."
+    display: action_bar
+  sickle-no-crops:
+    text: "<#D89B6A>No mature crops nearby."
     display: action_bar
 
   # Command messages (always delivered via chat)

@@ -1,6 +1,7 @@
 package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
+import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.util.Constants;
 import org.bukkit.Bukkit;
 import org.bukkit.enchantments.Enchantment;
@@ -75,6 +76,11 @@ public class MendingListener implements Listener {
         // Check if this is an OakTools tool
         if (!plugin.getItemFactory().isTool(item)) {
             return; // Not our tool, let vanilla handle it
+        }
+
+        // Sickles use vanilla Mending
+        if (plugin.getItemFactory().getToolType(item) == ToolType.SICKLE) {
+            return;
         }
 
         ItemMeta meta = item.getItemMeta();

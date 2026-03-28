@@ -5,6 +5,7 @@ import dev.oakheart.oaktools.model.FeedSource;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.model.WandMode;
 import dev.oakheart.oaktools.util.Constants;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
@@ -79,6 +80,42 @@ public class ItemFactory {
         }
 
         return meta.getPersistentDataContainer().has(Constants.TOOL_TYPE, PersistentDataType.STRING);
+    }
+
+    /**
+     * Creates a sickle tool of the specified tier.
+     * Uses vanilla durability (no PDC durability tracking).
+     */
+    public ItemStack createSickle(String tier) {
+        Material baseMaterial = plugin.getConfigManager().getSickleBaseMaterial(tier);
+        ItemStack item = new ItemStack(baseMaterial);
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        pdc.set(Constants.TOOL_TYPE, PersistentDataType.STRING, ToolType.SICKLE.name());
+        pdc.set(Constants.TOOL_TIER, PersistentDataType.STRING, tier.toLowerCase());
+
+        // Apply display name
+        String displayName = plugin.getConfigManager().getSickleDisplayName(tier);
+        meta.itemName(MiniMessage.miniMessage().deserialize(displayName));
+
+        item.setItemMeta(meta);
+
+        // Apply model if configured
+        String modelId = plugin.getConfigManager().getSickleModelId(tier);
+        if (modelId != null && !modelId.isEmpty()) {
+            plugin.getModelProviderManager().applyModel(item, ToolType.SICKLE);
+        }
+
+        return item;
+    }
+
+    public String getToolTier(ItemStack item) {
+        if (item == null) return null;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return null;
+        return meta.getPersistentDataContainer().get(Constants.TOOL_TIER, PersistentDataType.STRING);
     }
 
     public ToolType getToolType(ItemStack item) {

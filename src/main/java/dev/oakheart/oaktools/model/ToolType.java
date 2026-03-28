@@ -9,7 +9,8 @@ public enum ToolType {
     WAND("Builder's Wand", "wand"),
     EXCAVATOR("Excavation Shovel", "excavator"),
     LUMBERJACK("Lumberjack's Axe", "lumberjack"),
-    VEIN_MINER("Vein Miner Pickaxe", "vein-miner");
+    VEIN_MINER("Vein Miner Pickaxe", "vein-miner"),
+    SICKLE("Sickle", "sickle");
 
     private final String displayName;
     private final String configKey;
