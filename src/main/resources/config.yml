@@ -36,7 +36,7 @@ tools:
     # Placeholders: <tool>, <cur> (damage taken), <max>, <remaining>, <percent>
     display:
       enabled: true
-      name: "<white>File</white>"
+      name: "File"
       lore: []
     base-material: WARPED_FUNGUS_ON_A_STICK
     # Model settings (choose one format):
@@ -283,7 +283,7 @@ tools:
     # Placeholders: <tool>, <cur> (damage taken), <max>, <remaining>, <percent>, <feed_source>
     display:
       enabled: true
-      name: "<white>Trowel</white>"
+      name: "Trowel"
       lore:
         - "<gray>Feed Source:</gray> <white><feed_source></white>"
     base-material: WARPED_FUNGUS_ON_A_STICK
@@ -352,7 +352,7 @@ tools:
     # Placeholders: <tool>, <cur> (damage taken), <max>, <remaining>, <percent>, <wand_mode>
     display:
       enabled: true
-      name: "<white>Builder's Wand</white>"
+      name: "Builder's Wand"
       lore:
         - "<gray>Mode:</gray> <white><wand_mode></white>"
     base-material: WARPED_FUNGUS_ON_A_STICK
