@@ -525,7 +525,7 @@ tools:
     enabled: true
     tiers:
       wooden:
-        display-name: "<white>Wooden Sickle</white>"
+        display-name: "Wooden Sickle"
         model-id: ""
         radius: 0
         recipe:
@@ -539,7 +539,7 @@ tools:
             P: "#planks"
             S: STICK
       stone:
-        display-name: "<white>Stone Sickle</white>"
+        display-name: "Stone Sickle"
         model-id: ""
         radius: 1
         recipe:
@@ -553,7 +553,7 @@ tools:
             C: COBBLESTONE
             S: STICK
       iron:
-        display-name: "<white>Iron Sickle</white>"
+        display-name: "Iron Sickle"
         model-id: ""
         radius: 2
         recipe:
@@ -567,7 +567,7 @@ tools:
             I: IRON_INGOT
             S: STICK
       gold:
-        display-name: "<white>Golden Sickle</white>"
+        display-name: "Golden Sickle"
         model-id: ""
         radius: 1
         recipe:
@@ -581,7 +581,7 @@ tools:
             G: GOLD_INGOT
             S: STICK
       diamond:
-        display-name: "<white>Diamond Sickle</white>"
+        display-name: "Diamond Sickle"
         model-id: ""
         radius: 3
         recipe:
@@ -595,7 +595,7 @@ tools:
             D: DIAMOND
             S: STICK
       netherite:
-        display-name: "<white>Netherite Sickle</white>"
+        display-name: "Netherite Sickle"
         model-id: ""
         radius: 4
 
