@@ -30,6 +30,9 @@ public class EnchantBlockListener implements Listener {
         ToolType toolType = plugin.getItemFactory().getToolType(item);
         if (toolType == null) return;
 
+        // Sickles use vanilla enchanting — don't block
+        if (toolType == ToolType.SICKLE) return;
+
         Set<Enchantment> allowed = plugin.getConfigManager().getAllowedEnchantments(toolType);
         if (allowed.isEmpty()) {
             event.setCancelled(true);
