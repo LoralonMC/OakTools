@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class VulcanHook implements Listener {
 
-    private static final long EXEMPTION_TICKS = 5L;
+    private static final long EXEMPTION_TICKS = 10L;
 
     private final OakTools plugin;
     private final Map<UUID, Integer> exemptionCounts = new ConcurrentHashMap<>();
@@ -51,12 +51,16 @@ public class VulcanHook implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onVulcanFlag(VulcanFlagEvent event) {
-        if (!exemptionCounts.containsKey(event.getPlayer().getUniqueId())) {
-            return;
+        if (exemptionCounts.containsKey(event.getPlayer().getUniqueId())) {
+            event.setCancelled(true);
+            plugin.debug("[Vulcan Debug] Cancelled " + event.getCheck().getName() +
+                    " flag for " + event.getPlayer().getName() + " during tool operation");
         }
+    }
 
-        String checkName = event.getCheck().getName().toLowerCase();
-        if (checkName.equals("fastplace")) {
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onVulcanSetback(me.frep.vulcan.api.event.VulcanSetbackEvent event) {
+        if (exemptionCounts.containsKey(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
     }
