@@ -58,7 +58,8 @@ public class TreeDetector {
                 logs.add(current);
             }
 
-            // Search upward and laterally (not below the current block)
+            // Search all 6 adjacent blocks — branches can extend in any direction
+            // (leaf validation prevents false positives on player structures)
             for (Block neighbor : getTreeNeighbors(current)) {
                 if (visited.contains(neighbor)) continue;
                 visited.add(neighbor);
@@ -68,10 +69,7 @@ public class TreeDetector {
                 // Skip player-placed logs
                 if (tracker != null && tracker.isPlayerPlaced(neighbor)) continue;
 
-                // Only expand upward or at the same Y level (trees grow up)
-                if (neighbor.getY() >= current.getY()) {
-                    queue.add(neighbor);
-                }
+                queue.add(neighbor);
             }
         }
 
