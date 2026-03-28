@@ -47,9 +47,19 @@ public class ModelProviderManager {
 
     public boolean applyModel(ItemStack item, ToolType toolType) {
         FileConfiguration config = plugin.getConfigManager().getConfig();
-        String toolName = toolType.name().toLowerCase();
-        String path = "tools." + toolName + ".model-id";
+        String path = "tools." + toolType.getConfigKey() + ".model-id";
+        return applyModelFromPath(item, toolType, config, path);
+    }
 
+    /**
+     * Applies a model using a model ID string directly (for tools with non-standard config paths like sickle tiers).
+     */
+    public boolean applyModelById(ItemStack item, ToolType toolType, String modelId) {
+        if (modelId == null || modelId.isEmpty()) return false;
+        return applyModelString(item, toolType, modelId);
+    }
+
+    private boolean applyModelFromPath(ItemStack item, ToolType toolType, FileConfiguration config, String path) {
         // Check if model-id is an integer (vanilla CustomModelData)
         Object raw = config.get(path);
         if (raw instanceof Number number) {
@@ -64,6 +74,10 @@ public class ModelProviderManager {
             return false;
         }
 
+        return applyModelString(item, toolType, modelId);
+    }
+
+    private boolean applyModelString(ItemStack item, ToolType toolType, String modelId) {
         // Check if it's a plain integer written as a string
         try {
             int customModelData = Integer.parseInt(modelId);
@@ -88,7 +102,6 @@ public class ModelProviderManager {
         } else if (modelId.toLowerCase().startsWith("nexo:")) {
             actualModelId = modelId.substring(5);
 
-            // Nexo uses CustomModelData. For Item Model API, use the "model:" prefix instead.
             provider = new NexoProvider(logger);
             if (!provider.isAvailable()) {
                 logger.warning("Nexo provider requested but Nexo plugin is not available for " + toolType.name());
@@ -97,8 +110,6 @@ public class ModelProviderManager {
         } else if (modelId.toLowerCase().startsWith("itemsadder:")) {
             actualModelId = modelId.substring(11);
 
-            // ItemsAdder uses CustomModelData, not the modern Item Model API.
-            // Go straight to CustomModelData extraction (no Item Model API attempt).
             provider = new ItemsAdderProvider(logger);
             if (!provider.isAvailable()) {
                 logger.warning("ItemsAdder provider requested but ItemsAdder plugin is not available for " + toolType.name());

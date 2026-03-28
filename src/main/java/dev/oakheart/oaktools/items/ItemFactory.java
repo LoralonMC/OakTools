@@ -105,7 +105,7 @@ public class ItemFactory {
         // Apply model if configured
         String modelId = plugin.getConfigManager().getSickleModelId(tier);
         if (modelId != null && !modelId.isEmpty()) {
-            plugin.getModelProviderManager().applyModel(item, ToolType.SICKLE);
+            plugin.getModelProviderManager().applyModelById(item, ToolType.SICKLE, modelId);
         }
 
         return item;
