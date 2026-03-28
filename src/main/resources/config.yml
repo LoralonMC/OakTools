@@ -530,6 +530,7 @@ tools:
       - FERN
       - LARGE_FERN
       - DEAD_BUSH
+      - BUSH
       - DANDELION
       - POPPY
       - BLUE_ORCHID
