@@ -526,7 +526,7 @@ tools:
     tiers:
       wooden:
         display-name: "Wooden Sickle"
-        model-id: ""
+        model-id: "nexo:wooden_sickle"
         radius: 0
         recipe:
           enabled: true
@@ -540,7 +540,7 @@ tools:
             S: STICK
       stone:
         display-name: "Stone Sickle"
-        model-id: ""
+        model-id: "nexo:stone_sickle"
         radius: 1
         recipe:
           enabled: true
@@ -554,7 +554,7 @@ tools:
             S: STICK
       iron:
         display-name: "Iron Sickle"
-        model-id: ""
+        model-id: "nexo:iron_sickle"
         radius: 2
         recipe:
           enabled: true
@@ -568,7 +568,7 @@ tools:
             S: STICK
       gold:
         display-name: "Golden Sickle"
-        model-id: ""
+        model-id: "nexo:golden_sickle"
         radius: 5
         recipe:
           enabled: true
@@ -582,7 +582,7 @@ tools:
             S: STICK
       diamond:
         display-name: "Diamond Sickle"
-        model-id: ""
+        model-id: "nexo:diamond_sickle"
         radius: 3
         recipe:
           enabled: true
@@ -596,7 +596,7 @@ tools:
             S: STICK
       netherite:
         display-name: "Netherite Sickle"
-        model-id: ""
+        model-id: "nexo:netherite_sickle"
         radius: 4
 
 # ============================================================
