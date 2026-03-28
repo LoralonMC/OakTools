@@ -17,9 +17,6 @@ dependencies:
     CoreProtect:
       load: BEFORE
       required: false
-    Vulcan:
-      load: BEFORE
-      required: false
     packetevents:
       load: BEFORE
       required: false

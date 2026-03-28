@@ -2,7 +2,6 @@ package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.events.WandPlaceEvent;
-import dev.oakheart.oaktools.integration.VulcanHook;
 import dev.oakheart.oaktools.managers.WandHistoryManager;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.model.WandMode;
@@ -350,12 +349,6 @@ public class WandListener implements Listener {
         boolean broken = plugin.getDurabilityService().damage(item, player, 1);
         if (!broken) {
             plugin.getDisplayService().updateDisplay(item);
-        }
-
-        // Exempt from anticheat FastPlace detection during bulk placement
-        VulcanHook vulcanHook = plugin.getVulcanHook();
-        if (vulcanHook != null) {
-            vulcanHook.exempt(player);
         }
 
         // Place all blocks

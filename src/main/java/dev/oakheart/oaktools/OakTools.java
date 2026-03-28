@@ -5,7 +5,6 @@ import dev.oakheart.oaktools.config.ConfigManager;
 import dev.oakheart.oaktools.integration.CoreProtectLogger;
 import dev.oakheart.oaktools.integration.ModelProviderManager;
 import dev.oakheart.oaktools.integration.OverflowHook;
-import dev.oakheart.oaktools.integration.VulcanHook;
 import dev.oakheart.oaktools.items.ItemFactory;
 import dev.oakheart.oaktools.listeners.*;
 import dev.oakheart.oaktools.managers.BreakingAnimationManager;
@@ -49,7 +48,6 @@ public final class OakTools extends JavaPlugin {
 
     // Integration
     private CoreProtectLogger coreProtectLogger;
-    private VulcanHook vulcanHook;
     private OverflowHook overflowHook;
 
     @Override
@@ -111,10 +109,6 @@ public final class OakTools extends JavaPlugin {
         coreProtectLogger = new CoreProtectLogger(this);
         coreProtectLogger.initialize();
 
-        if (getServer().getPluginManager().getPlugin("Vulcan") != null) {
-            vulcanHook = new VulcanHook(this);
-            vulcanHook.register();
-        }
     }
 
     private void registerListeners() {
@@ -270,7 +264,5 @@ public final class OakTools extends JavaPlugin {
         return overflowHook;
     }
 
-    public VulcanHook getVulcanHook() {
-        return vulcanHook;
-    }
+
 }
