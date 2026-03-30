@@ -1,21 +1,19 @@
 package dev.oakheart.oaktools.config;
 
+import dev.oakheart.config.ConfigManager;
 import dev.oakheart.oaktools.model.ToolType;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class ConfigValidator {
 
-    public static boolean validate(FileConfiguration config, Logger logger) {
+    public static boolean validate(ConfigManager config, Logger logger) {
         List<String> warnings = new ArrayList<>();
         boolean valid = true;
 
@@ -42,7 +40,7 @@ public class ConfigValidator {
     // Tools that use a different config structure and skip standard validation
     private static final Set<ToolType> NON_STANDARD_TOOLS = Set.of(ToolType.SICKLE);
 
-    private static boolean validateTool(FileConfiguration config, String toolName, List<String> warnings) {
+    private static boolean validateTool(ConfigManager config, String toolName, List<String> warnings) {
         // Skip tools with non-standard config layouts
         ToolType toolType = ToolType.fromString(toolName);
         if (toolType != null && NON_STANDARD_TOOLS.contains(toolType)) {
@@ -79,7 +77,7 @@ public class ConfigValidator {
         return true;
     }
 
-    private static boolean validateGeneralSettings(FileConfiguration config, List<String> warnings) {
+    private static boolean validateGeneralSettings(ConfigManager config, List<String> warnings) {
         int threshold = config.getInt("general.durability-warning-threshold", 20);
         if (threshold < 0 || threshold > 100) {
             warnings.add("general.durability-warning-threshold must be 0-100. Found: " + threshold);
@@ -93,7 +91,7 @@ public class ConfigValidator {
         return true;
     }
 
-    private static boolean validateDisplaySettings(FileConfiguration config, List<String> warnings) {
+    private static boolean validateDisplaySettings(ConfigManager config, List<String> warnings) {
         for (ToolType toolType : ToolType.values()) {
             if (NON_STANDARD_TOOLS.contains(toolType)) continue;
             String path = "tools." + toolType.getConfigKey() + ".display";
@@ -105,35 +103,12 @@ public class ConfigValidator {
         return true;
     }
 
-    private static boolean validateMessageSettings(FileConfiguration config, List<String> warnings) {
-        if (!config.contains("messages")) {
-            warnings.add("Missing messages configuration section.");
-            return false;
-        }
-
-        var section = config.getConfigurationSection("messages");
-        if (section == null) {
-            warnings.add("Missing messages configuration section.");
-            return false;
-        }
-
-        for (String key : section.getKeys(false)) {
-            if (key.equals("commands")) {
-                continue;
-            }
-            var msgSection = section.getConfigurationSection(key);
-            if (msgSection != null && msgSection.contains("display")) {
-                String display = msgSection.getString("display", "");
-                if (!display.equals("chat") && !display.equals("action_bar") && !display.equals("title")) {
-                    warnings.add("messages." + key + ".display contains invalid method: " + display);
-                }
-            }
-        }
-
+    private static boolean validateMessageSettings(ConfigManager config, List<String> warnings) {
+        // Messages are now in messages.yml, no validation needed here
         return true;
     }
 
-    private static boolean validateRecipes(FileConfiguration config, List<String> warnings) {
+    private static boolean validateRecipes(ConfigManager config, List<String> warnings) {
         boolean valid = true;
         for (ToolType toolType : ToolType.values()) {
             if (NON_STANDARD_TOOLS.contains(toolType)) continue;
@@ -171,8 +146,8 @@ public class ConfigValidator {
             }
 
             // Validate ingredients
-            ConfigurationSection ingredients = config.getConfigurationSection(path + ".ingredients");
-            if (ingredients == null) {
+            var ingredientsSection = config.getSection(path + ".ingredients");
+            if (ingredientsSection == null) {
                 if (!shapeLetters.isEmpty()) {
                     warnings.add(path + ".ingredients section is missing but shape uses letters: " + shapeLetters);
                     valid = false;
@@ -181,7 +156,7 @@ public class ConfigValidator {
             }
 
             Set<Character> ingredientKeys = new HashSet<>();
-            for (String key : ingredients.getKeys(false)) {
+            for (String key : ingredientsSection.getKeys(false)) {
                 if (key.length() != 1) {
                     warnings.add(path + ".ingredients key '" + key + "' must be a single character.");
                     continue;
@@ -189,7 +164,7 @@ public class ConfigValidator {
                 char c = key.charAt(0);
                 ingredientKeys.add(c);
 
-                String materialName = ingredients.getString(key, "");
+                String materialName = ingredientsSection.getString(key, "");
                 if (materialName.startsWith("#")) {
                     continue; // Tag-based ingredient (e.g. #planks), validated at registration time
                 }
@@ -217,7 +192,7 @@ public class ConfigValidator {
         return valid;
     }
 
-    private static boolean validateWandSettings(FileConfiguration config, List<String> warnings) {
+    private static boolean validateWandSettings(ConfigManager config, List<String> warnings) {
         int maxBlocks = config.getInt("tools.wand.max-blocks", 64);
         if (maxBlocks < 1 || maxBlocks > 1024) {
             warnings.add("tools.wand.max-blocks must be 1-1024. Found: " + maxBlocks);
@@ -248,7 +223,7 @@ public class ConfigValidator {
         return true;
     }
 
-    private static boolean validateHarvestingSettings(FileConfiguration config, List<String> warnings) {
+    private static boolean validateHarvestingSettings(ConfigManager config, List<String> warnings) {
         boolean valid = true;
         for (ToolType toolType : List.of(ToolType.EXCAVATOR, ToolType.LUMBERJACK, ToolType.VEIN_MINER)) {
             String key = toolType.getConfigKey();

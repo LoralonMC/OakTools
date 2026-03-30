@@ -10,13 +10,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 
-import java.io.File;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -33,8 +30,8 @@ public class ConfigManager {
 
     private final OakTools plugin;
     private final Logger logger;
-    private final File configFile;
-    private FileConfiguration config;
+    private final Path configFile;
+    private dev.oakheart.config.ConfigManager config;
 
     // Cached config values for hot paths
     private Set<Material> cachedReplaceableMaterials = EnumSet.noneOf(Material.class);
@@ -129,15 +126,20 @@ public class ConfigManager {
     public ConfigManager(OakTools plugin) {
         this.plugin = plugin;
         this.logger = plugin.getLogger();
-        this.configFile = new File(plugin.getDataFolder(), "config.yml");
+        this.configFile = plugin.getDataFolder().toPath().resolve("config.yml");
     }
 
     public void load() {
-        if (!configFile.exists()) {
+        if (!configFile.toFile().exists()) {
             plugin.saveResource("config.yml", false);
         }
 
-        config = YamlConfiguration.loadConfiguration(configFile);
+        try {
+            config = dev.oakheart.config.ConfigManager.load(configFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config.yml", e);
+        }
+
         mergeDefaults();
 
         if (!ConfigValidator.validate(config, logger)) {
@@ -148,61 +150,38 @@ public class ConfigManager {
     }
 
     public boolean reload() {
-        FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
-        applyDefaults(newConfig);
-
-        if (!ConfigValidator.validate(newConfig, logger)) {
-            logger.warning("Config validation failed. Keeping old configuration.");
+        try {
+            config.reload();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to reload config.yml", e);
             return false;
         }
 
-        this.config = newConfig;
+        mergeDefaults();
+
+        if (!ConfigValidator.validate(config, logger)) {
+            logger.warning("Config validation failed. Keeping old cached values.");
+            return false;
+        }
+
         cacheValues();
         logger.info("Configuration reloaded successfully.");
         return true;
     }
 
     private void mergeDefaults() {
-        applyDefaults(config);
-        saveNewKeys();
-    }
-
-    private void applyDefaults(FileConfiguration targetConfig) {
         try (var stream = plugin.getResource("config.yml")) {
             if (stream == null) {
                 logger.warning("Could not load default config from JAR");
                 return;
             }
-            FileConfiguration defaults = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(stream, StandardCharsets.UTF_8));
-            targetConfig.setDefaults(defaults);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to load default config", e);
-        }
-    }
-
-    private void saveNewKeys() {
-        try {
-            FileConfiguration defaults = config.getDefaults() instanceof FileConfiguration fc ? fc : null;
-            if (defaults != null && hasNewKeys(defaults)) {
-                config.options().copyDefaults(true);
-                config.save(configFile);
+            var defaults = dev.oakheart.config.ConfigManager.fromStream(stream);
+            if (config.mergeDefaults(defaults)) {
+                config.save();
             }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to save new config keys", e);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to merge default config", e);
         }
-    }
-
-    private boolean hasNewKeys(FileConfiguration defaults) {
-        for (String key : defaults.getKeys(true)) {
-            if (defaults.isConfigurationSection(key)) {
-                continue;
-            }
-            if (!config.contains(key, true)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void cacheValues() {
@@ -303,7 +282,7 @@ public class ConfigManager {
         Map<String, String> sickleNames = new HashMap<>();
         Map<String, String> sickleModels = new HashMap<>();
         Set<String> sickleTierSet = new HashSet<>();
-        var tiersSection = config.getConfigurationSection("tools.sickle.tiers");
+        var tiersSection = config.getSection("tools.sickle.tiers");
         if (tiersSection != null) {
             for (String tier : tiersSection.getKeys(false)) {
                 sickleTierSet.add(tier);
@@ -438,7 +417,7 @@ public class ConfigManager {
         cachedWandModeNames = modeNames;
     }
 
-    public FileConfiguration getConfig() {
+    public dev.oakheart.config.ConfigManager getConfig() {
         return config;
     }
 
@@ -760,13 +739,5 @@ public class ConfigManager {
     private static String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;
         return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
-    }
-
-    public String getMessage(String key) {
-        return config.getString("messages." + key + ".text", "");
-    }
-
-    public String getMessageDisplay(String key) {
-        return config.getString("messages." + key + ".display", "chat");
     }
 }

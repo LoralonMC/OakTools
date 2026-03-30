@@ -1,9 +1,10 @@
 package dev.oakheart.oaktools;
 
+import dev.oakheart.message.MessageManager;
+import dev.oakheart.models.ModelProviderManager;
 import dev.oakheart.oaktools.commands.OakToolsCommand;
 import dev.oakheart.oaktools.config.ConfigManager;
 import dev.oakheart.oaktools.integration.CoreProtectLogger;
-import dev.oakheart.oaktools.integration.ModelProviderManager;
 import dev.oakheart.oaktools.integration.OverflowHook;
 import dev.oakheart.oaktools.items.ItemFactory;
 import dev.oakheart.oaktools.listeners.*;
@@ -11,9 +12,9 @@ import dev.oakheart.oaktools.managers.BreakingAnimationManager;
 import dev.oakheart.oaktools.managers.PlacedBlockTracker;
 import dev.oakheart.oaktools.managers.WandHistoryManager;
 import dev.oakheart.oaktools.managers.WandPreviewManager;
-import dev.oakheart.oaktools.message.MessageManager;
 import dev.oakheart.oaktools.recipes.RecipeManager;
 import dev.oakheart.oaktools.services.*;
+import dev.oakheart.util.DebugLogger;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -34,6 +35,7 @@ public final class OakTools extends JavaPlugin {
     private DisplayService displayService;
     private MessageManager messageManager;
     private ProtectionService protectionService;
+    private DebugLogger debugLogger;
 
     // Listeners (stored for reload callbacks)
     private RecipeDiscoveryListener recipeDiscoveryListener;
@@ -85,15 +87,19 @@ public final class OakTools extends JavaPlugin {
         configManager = new ConfigManager(this);
         configManager.load();
 
-        modelProviderManager = new ModelProviderManager(this);
-        modelProviderManager.initialize();
+        messageManager = new MessageManager(this, getLogger());
+        messageManager.load();
+
+        debugLogger = new DebugLogger(getLogger(), configManager::isDebug);
+
+        modelProviderManager = new ModelProviderManager(getLogger());
+        logModelConfiguration();
         recipeManager = new RecipeManager(this);
 
         itemFactory = new ItemFactory(this);
 
         durabilityService = new DurabilityService(this);
         displayService = new DisplayService(this);
-        messageManager = new MessageManager(this);
         protectionService = new ProtectionService(this);
 
         wandHistoryManager = new WandHistoryManager(this);
@@ -190,7 +196,8 @@ public final class OakTools extends JavaPlugin {
      * Called from OakToolsCommand after config reload.
      */
     public void refreshAfterReload() {
-        modelProviderManager.initialize();
+        messageManager.reload();
+        logModelConfiguration();
         coreProtectLogger.initialize();
         overflowHook.initialize();
         if (recipeDiscoveryListener != null) {
@@ -205,9 +212,26 @@ public final class OakTools extends JavaPlugin {
      * Log a debug message if debug mode is enabled.
      */
     public void debug(String message) {
-        if (configManager.isDebug()) {
-            getLogger().info(message);
-        }
+        debugLogger.log(message);
+    }
+
+    private void logModelConfiguration() {
+        var config = configManager.getConfig();
+        String fileModel = getModelIdAsString(config, "tools.file.model-id");
+        String trowelModel = getModelIdAsString(config, "tools.trowel.model-id");
+        String wandModel = getModelIdAsString(config, "tools.wand.model-id");
+        getLogger().info("Model configuration:");
+        getLogger().info("  File: " + fileModel + " (provider: " + modelProviderManager.getProviderName(fileModel) + ")");
+        getLogger().info("  Trowel: " + trowelModel + " (provider: " + modelProviderManager.getProviderName(trowelModel) + ")");
+        getLogger().info("  Wand: " + wandModel + " (provider: " + modelProviderManager.getProviderName(wandModel) + ")");
+    }
+
+    /**
+     * Get model ID as string. Handles both int and string config values.
+     */
+    private String getModelIdAsString(dev.oakheart.config.ConfigManager config, String path) {
+        // Library ConfigManager always returns strings, but integers may be stored as "1001"
+        return config.getString(path, "1001");
     }
 
     // Getters

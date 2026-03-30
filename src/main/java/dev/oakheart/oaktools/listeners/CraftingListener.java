@@ -33,7 +33,7 @@ public class CraftingListener implements Listener {
         if (!event.getWhoClicked().hasPermission(permission)) {
             event.setCancelled(true);
             if (event.getWhoClicked() instanceof Player player) {
-                plugin.getMessageManager().sendMessage(player, "craft-denied");
+                plugin.getMessageManager().send(player, "craft-denied");
             }
         }
     }

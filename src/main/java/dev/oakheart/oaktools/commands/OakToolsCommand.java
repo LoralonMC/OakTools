@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import dev.oakheart.command.CommandRegistrar;
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.FeedSource;
 import dev.oakheart.oaktools.model.ToolType;
@@ -13,17 +14,14 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -36,11 +34,7 @@ public class OakToolsCommand {
     }
 
     public void register() {
-        LifecycleEventManager<Plugin> manager = plugin.getLifecycleManager();
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            Commands commands = event.registrar();
-            commands.register(buildCommand(), "OakTools custom tool management", List.of("otools", "ot"));
-        });
+        CommandRegistrar.register(plugin, buildCommand(), "OakTools custom tool management", List.of("otools", "ot"));
     }
 
     private LiteralCommandNode<CommandSourceStack> buildCommand() {
@@ -120,7 +114,8 @@ public class OakToolsCommand {
 
         Player target = resolvePlayer(ctx);
         if (target == null) {
-            plugin.getMessageManager().sendCommandMessage(sender, "give.player-not-found", Map.of("player", "unknown"));
+            plugin.getMessageManager().sendCommand(sender, "give.player-not-found",
+                    Placeholder.unparsed("player", "unknown"));
             return Command.SINGLE_SUCCESS;
         }
 
@@ -130,7 +125,7 @@ public class OakToolsCommand {
         if (toolArg.startsWith("sickle_")) {
             String tier = toolArg.substring("sickle_".length());
             if (!plugin.getConfigManager().getSickleTiers().contains(tier)) {
-                plugin.getMessageManager().sendCommandMessage(sender, "give.invalid-tool");
+                plugin.getMessageManager().sendCommand(sender, "give.invalid-tool");
                 return Command.SINGLE_SUCCESS;
             }
 
@@ -140,11 +135,12 @@ public class OakToolsCommand {
             String displayName = plugin.getConfigManager().getSickleDisplayName(tier);
             // Strip MiniMessage tags for plain text in command feedback
             String plainName = displayName.replaceAll("<[^>]+>", "");
-            plugin.getMessageManager().sendCommandMessage(sender, "give.success-sender",
-                    Map.of("tool", plainName, "player", target.getName()));
+            plugin.getMessageManager().sendCommand(sender, "give.success-sender",
+                    Placeholder.unparsed("tool", plainName),
+                    Placeholder.unparsed("player", target.getName()));
             if (!silent) {
-                plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
-                        Map.of("tool", plainName));
+                plugin.getMessageManager().sendCommand(target, "give.success-target",
+                        Placeholder.unparsed("tool", plainName));
             }
             return Command.SINGLE_SUCCESS;
         }
@@ -153,7 +149,7 @@ public class OakToolsCommand {
         try {
             toolType = ToolType.valueOf(toolArg.toUpperCase());
         } catch (IllegalArgumentException e) {
-            plugin.getMessageManager().sendCommandMessage(sender, "give.invalid-tool");
+            plugin.getMessageManager().sendCommand(sender, "give.invalid-tool");
             return Command.SINGLE_SUCCESS;
         }
 
@@ -165,8 +161,8 @@ public class OakToolsCommand {
         }
 
         if (durability < 1 || durability > maxDurability) {
-            plugin.getMessageManager().sendCommandMessage(sender, "give.invalid-durability",
-                    Map.of("value", String.valueOf(durability)));
+            plugin.getMessageManager().sendCommand(sender, "give.invalid-durability",
+                    Placeholder.unparsed("value", String.valueOf(durability)));
             return Command.SINGLE_SUCCESS;
         }
 
@@ -174,11 +170,12 @@ public class OakToolsCommand {
         ItemStack tool = plugin.getItemFactory().createTool(toolType, damage);
         target.getInventory().addItem(tool);
 
-        plugin.getMessageManager().sendCommandMessage(sender, "give.success-sender",
-                Map.of("tool", toolType.getDisplayName(), "player", target.getName()));
+        plugin.getMessageManager().sendCommand(sender, "give.success-sender",
+                Placeholder.unparsed("tool", toolType.getDisplayName()),
+                Placeholder.unparsed("player", target.getName()));
         if (!silent) {
-            plugin.getMessageManager().sendCommandMessage(target, "give.success-target",
-                    Map.of("tool", toolType.getDisplayName()));
+            plugin.getMessageManager().sendCommand(target, "give.success-target",
+                    Placeholder.unparsed("tool", toolType.getDisplayName()));
         }
 
         return Command.SINGLE_SUCCESS;
@@ -187,13 +184,13 @@ public class OakToolsCommand {
     // ===== Reload =====
 
     private int handleReload(CommandSender sender) {
-        plugin.getMessageManager().sendCommandMessage(sender, "reload.reloading");
+        plugin.getMessageManager().sendCommand(sender, "reload.reloading");
 
         try {
             boolean success = plugin.getConfigManager().reload();
 
             if (!success) {
-                plugin.getMessageManager().sendCommandMessage(sender, "reload.failed");
+                plugin.getMessageManager().sendCommand(sender, "reload.failed");
                 return Command.SINGLE_SUCCESS;
             }
 
@@ -201,10 +198,10 @@ public class OakToolsCommand {
             plugin.getRecipeManager().registerRecipes();
             plugin.refreshAfterReload();
 
-            plugin.getMessageManager().sendCommandMessage(sender, "reload.success");
+            plugin.getMessageManager().sendCommand(sender, "reload.success");
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "Error during reload", e);
-            plugin.getMessageManager().sendCommandMessage(sender, "reload.failed");
+            plugin.getMessageManager().sendCommand(sender, "reload.failed");
         }
 
         return Command.SINGLE_SUCCESS;
@@ -215,7 +212,7 @@ public class OakToolsCommand {
     private int handleInfo(CommandSender sender, Player target) {
         if (target == null) {
             if (!(sender instanceof Player player)) {
-                plugin.getMessageManager().sendCommandMessage(sender, "info.must-specify-player");
+                plugin.getMessageManager().sendCommand(sender, "info.must-specify-player");
                 return Command.SINGLE_SUCCESS;
             }
             target = player;
@@ -224,8 +221,8 @@ public class OakToolsCommand {
         ItemStack item = target.getInventory().getItemInMainHand();
 
         if (!plugin.getItemFactory().isTool(item)) {
-            plugin.getMessageManager().sendCommandMessage(sender, "info.not-holding-tool",
-                    Map.of("player", target.getName()));
+            plugin.getMessageManager().sendCommand(sender, "info.not-holding-tool",
+                    Placeholder.unparsed("player", target.getName()));
             return Command.SINGLE_SUCCESS;
         }
 
@@ -234,13 +231,14 @@ public class OakToolsCommand {
         int maxDurability = plugin.getDurabilityService().getMaxDurability(item);
         int remaining = maxDurability - currentDamage;
 
-        plugin.getMessageManager().sendCommandMessage(sender, "info.header");
-        plugin.getMessageManager().sendCommandMessage(sender, "info.player",
-                Map.of("player", target.getName()));
-        plugin.getMessageManager().sendCommandMessage(sender, "info.tool-type",
-                Map.of("tool", toolType != null ? toolType.getDisplayName() : "Unknown"));
-        plugin.getMessageManager().sendCommandMessage(sender, "info.durability",
-                Map.of("remaining", String.valueOf(remaining), "max", String.valueOf(maxDurability)));
+        plugin.getMessageManager().sendCommand(sender, "info.header");
+        plugin.getMessageManager().sendCommand(sender, "info.player",
+                Placeholder.unparsed("player", target.getName()));
+        plugin.getMessageManager().sendCommand(sender, "info.tool-type",
+                Placeholder.unparsed("tool", toolType != null ? toolType.getDisplayName() : "Unknown"));
+        plugin.getMessageManager().sendCommand(sender, "info.durability",
+                Placeholder.unparsed("remaining", String.valueOf(remaining)),
+                Placeholder.unparsed("max", String.valueOf(maxDurability)));
 
         if (toolType == ToolType.TROWEL) {
             ItemMeta meta = item.getItemMeta();
@@ -248,8 +246,8 @@ public class OakToolsCommand {
                 String feedSourceString = meta.getPersistentDataContainer()
                         .get(Constants.FEED_SOURCE, PersistentDataType.STRING);
                 FeedSource feedSource = FeedSource.fromString(feedSourceString);
-                plugin.getMessageManager().sendCommandMessage(sender, "info.feed-source",
-                        Map.of("feed_source", feedSource.getDisplayName()));
+                plugin.getMessageManager().sendCommand(sender, "info.feed-source",
+                        Placeholder.unparsed("feed_source", feedSource.getDisplayName()));
             }
         }
 
@@ -261,7 +259,7 @@ public class OakToolsCommand {
     private int handleRepair(CommandSender sender, Player target) {
         if (target == null) {
             if (!(sender instanceof Player player)) {
-                plugin.getMessageManager().sendCommandMessage(sender, "repair.must-specify-player");
+                plugin.getMessageManager().sendCommand(sender, "repair.must-specify-player");
                 return Command.SINGLE_SUCCESS;
             }
             target = player;
@@ -270,18 +268,18 @@ public class OakToolsCommand {
         ItemStack item = target.getInventory().getItemInMainHand();
 
         if (!plugin.getItemFactory().isTool(item)) {
-            plugin.getMessageManager().sendCommandMessage(sender, "repair.not-holding-tool",
-                    Map.of("player", target.getName()));
+            plugin.getMessageManager().sendCommand(sender, "repair.not-holding-tool",
+                    Placeholder.unparsed("player", target.getName()));
             return Command.SINGLE_SUCCESS;
         }
 
         plugin.getDurabilityService().repairFully(item);
         plugin.getDisplayService().updateDisplay(item);
 
-        plugin.getMessageManager().sendCommandMessage(sender, "repair.success-sender",
-                Map.of("player", target.getName()));
+        plugin.getMessageManager().sendCommand(sender, "repair.success-sender",
+                Placeholder.unparsed("player", target.getName()));
         if (target != sender) {
-            plugin.getMessageManager().sendCommandMessage(target, "repair.success-target");
+            plugin.getMessageManager().sendCommand(target, "repair.success-target");
         }
 
         return Command.SINGLE_SUCCESS;
@@ -290,18 +288,18 @@ public class OakToolsCommand {
     // ===== Help =====
 
     private void sendHelp(CommandSender sender) {
-        plugin.getMessageManager().sendCommandMessage(sender, "help.header");
+        plugin.getMessageManager().sendCommand(sender, "help.header");
         if (sender.hasPermission("oaktools.give")) {
-            plugin.getMessageManager().sendCommandMessage(sender, "help.give");
+            plugin.getMessageManager().sendCommand(sender, "help.give");
         }
         if (sender.hasPermission("oaktools.reload")) {
-            plugin.getMessageManager().sendCommandMessage(sender, "help.reload");
+            plugin.getMessageManager().sendCommand(sender, "help.reload");
         }
         if (sender.hasPermission("oaktools.info")) {
-            plugin.getMessageManager().sendCommandMessage(sender, "help.info");
+            plugin.getMessageManager().sendCommand(sender, "help.info");
         }
         if (sender.hasPermission("oaktools.repair")) {
-            plugin.getMessageManager().sendCommandMessage(sender, "help.repair");
+            plugin.getMessageManager().sendCommand(sender, "help.repair");
         }
     }
 }

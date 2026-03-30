@@ -11,7 +11,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.Map;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 public class DurabilityService {
@@ -72,10 +73,10 @@ public class DurabilityService {
             if (remaining <= thresholdValue) {
                 var toolType = plugin.getItemFactory().getToolType(item);
                 if (toolType != null) {
-                    plugin.getMessageManager().sendMessage(player, "tool-low-durability", Map.of(
-                            "tool", toolType.getDisplayName(),
-                            "remaining", String.valueOf(remaining),
-                            "max", String.valueOf(maxDurability)));
+                    plugin.getMessageManager().send(player, "tool-low-durability",
+                            Placeholder.unparsed("tool", toolType.getDisplayName()),
+                            Placeholder.unparsed("remaining", String.valueOf(remaining)),
+                            Placeholder.unparsed("max", String.valueOf(maxDurability)));
                 }
             }
         }
@@ -189,8 +190,8 @@ public class DurabilityService {
         // Send break message before removing
         var toolType = plugin.getItemFactory().getToolType(item);
         if (toolType != null) {
-            plugin.getMessageManager().sendMessage(player, "tool-broken",
-                    Map.of("tool", toolType.getDisplayName()));
+            plugin.getMessageManager().send(player, "tool-broken",
+                    Placeholder.unparsed("tool", toolType.getDisplayName()));
         }
 
         Sound breakSound = Sound.sound(Key.key("minecraft:entity.item.break"), Sound.Source.PLAYER, 1.0f, 1.0f);

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Migrate to OakheartLib shared library (oakheart-core for config/messages/commands, oakheart-models for model providers)
+- Messages moved from config.yml to standalone messages.yml (auto-migrated on first load)
+- Replace Bukkit FileConfiguration with OakheartLib ConfigManager (format-preserving YAML)
+- Replace local ModelProviderManager with shared oakheart-models library
+- Update Paper API to 1.21.10
+
+### Removed
+
+- Local MessageManager, ModelProvider, and model provider implementations (replaced by OakheartLib)
+
 ### Added
 
 - Excavation Shovel harvesting tool — mines a 3x3 area of shovel-mineable blocks on the clicked face with animated one-by-one breaking

@@ -62,7 +62,11 @@ public class ItemFactory {
 
         item.setItemMeta(meta);
 
-        plugin.getModelProviderManager().applyModel(item, toolType);
+        String modelId = plugin.getConfigManager().getConfig()
+                .getString("tools." + toolType.getConfigKey() + ".model-id", "");
+        if (!modelId.isEmpty()) {
+            plugin.getModelProviderManager().applyModel(item, modelId);
+        }
 
         plugin.getDisplayService().setInitialDisplay(item, toolType);
 
@@ -105,7 +109,7 @@ public class ItemFactory {
         // Apply model if configured
         String modelId = plugin.getConfigManager().getSickleModelId(tier);
         if (modelId != null && !modelId.isEmpty()) {
-            plugin.getModelProviderManager().applyModelById(item, ToolType.SICKLE, modelId);
+            plugin.getModelProviderManager().applyModel(item, modelId);
         }
 
         return item;

@@ -25,6 +25,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,7 +119,7 @@ public class BreakingAnimationManager implements Listener {
             Player player = Bukkit.getPlayer(playerId);
             if (player != null) {
                 flushOverflow(player, operation);
-                plugin.getMessageManager().sendMessage(player, "operation-cancelled");
+                plugin.getMessageManager().send(player, "operation-cancelled");
             }
         }
     }
@@ -144,7 +146,7 @@ public class BreakingAnimationManager implements Listener {
                 clearCrackAnimation(op);
                 unfreezeBlocks(op);
                 flushOverflow(player, op);
-                plugin.getMessageManager().sendMessage(player, "operation-cancelled");
+                plugin.getMessageManager().send(player, "operation-cancelled");
                 iterator.remove();
                 continue;
             }
@@ -154,7 +156,7 @@ public class BreakingAnimationManager implements Listener {
                 clearCrackAnimation(op);
                 unfreezeBlocks(op);
                 flushOverflow(player, op);
-                plugin.getMessageManager().sendMessage(player, "operation-cancelled");
+                plugin.getMessageManager().send(player, "operation-cancelled");
                 iterator.remove();
                 continue;
             }
@@ -174,8 +176,8 @@ public class BreakingAnimationManager implements Listener {
                 unfreezeBlocks(op);
                 flushOverflow(player, op);
                 if (op.showProgress) {
-                    plugin.getMessageManager().sendMessage(player, op.completeMessageKey,
-                            Map.of("count", String.valueOf(op.brokenCount)));
+                    plugin.getMessageManager().send(player, op.completeMessageKey,
+                            Placeholder.unparsed("count", String.valueOf(op.brokenCount)));
                 }
                 iterator.remove();
                 continue;
@@ -222,9 +224,9 @@ public class BreakingAnimationManager implements Listener {
 
             // Send progress message
             if (op.showProgress) {
-                plugin.getMessageManager().sendMessage(player, op.progressMessageKey,
-                        Map.of("count", String.valueOf(op.brokenCount),
-                                "total", String.valueOf(op.totalBlocks)));
+                plugin.getMessageManager().send(player, op.progressMessageKey,
+                        Placeholder.unparsed("count", String.valueOf(op.brokenCount)),
+                        Placeholder.unparsed("total", String.valueOf(op.totalBlocks)));
             }
 
             // Show crack animation on next block in queue
@@ -300,8 +302,8 @@ public class BreakingAnimationManager implements Listener {
         DropHandler.flushOverflow(player, op.accumulatedOverflow, overflowHook);
         int count = op.accumulatedOverflow.stream().mapToInt(ItemStack::getAmount).sum();
         if (count > 0) {
-            plugin.getMessageManager().sendMessage(player, "inventory-overflow",
-                    Map.of("count", String.valueOf(count)));
+            plugin.getMessageManager().send(player, "inventory-overflow",
+                    Placeholder.unparsed("count", String.valueOf(count)));
         }
     }
 

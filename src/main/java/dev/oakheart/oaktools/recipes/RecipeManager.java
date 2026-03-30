@@ -1,12 +1,11 @@
 package dev.oakheart.oaktools.recipes;
 
+import dev.oakheart.config.ConfigManager;
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.ToolType;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
@@ -40,7 +39,7 @@ public class RecipeManager {
     }
 
     private void registerRecipe(ToolType toolType) {
-        FileConfiguration config = plugin.getConfigManager().getConfig();
+        ConfigManager config = plugin.getConfigManager().getConfig();
         String toolName = toolType.getConfigKey();
 
         if (!config.getBoolean("tools." + toolName + ".recipe.enabled", true)) {
@@ -61,7 +60,7 @@ public class RecipeManager {
 
         String[] shape = shapeList.toArray(new String[0]);
 
-        ConfigurationSection ingredientsSection = config.getConfigurationSection(recipePath + ".ingredients");
+        ConfigManager ingredientsSection = config.getSection(recipePath + ".ingredients");
         if (ingredientsSection == null) {
             plugin.getLogger().warning("Missing ingredients for " + toolName);
             return;
@@ -85,7 +84,7 @@ public class RecipeManager {
     }
 
     private void registerSickleRecipes() {
-        FileConfiguration config = plugin.getConfigManager().getConfig();
+        ConfigManager config = plugin.getConfigManager().getConfig();
 
         for (String tier : plugin.getConfigManager().getSickleTiers()) {
             // Netherite uses smithing table, not crafting
@@ -103,7 +102,7 @@ public class RecipeManager {
                 continue;
             }
 
-            ConfigurationSection ingredientsSection = config.getConfigurationSection(recipePath + ".ingredients");
+            ConfigManager ingredientsSection = config.getSection(recipePath + ".ingredients");
             if (ingredientsSection == null) {
                 plugin.getLogger().warning("Missing sickle recipe ingredients for tier " + tier);
                 continue;
@@ -156,7 +155,7 @@ public class RecipeManager {
         }
     }
 
-    private void applyIngredients(ShapedRecipe recipe, ConfigurationSection ingredients, String toolName) {
+    private void applyIngredients(ShapedRecipe recipe, ConfigManager ingredients, String toolName) {
         for (String ingredientKey : ingredients.getKeys(false)) {
             String materialName = ingredients.getString(ingredientKey);
             if (materialName == null) continue;

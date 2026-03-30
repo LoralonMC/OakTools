@@ -7,6 +7,7 @@ group = 'dev.oakheart'
 version = '2.0.0'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         name = "papermc-repo"
@@ -17,25 +18,17 @@ repositories {
         url = "https://maven.playpro.com"
     }
     maven {
-        name = "jitpack"
-        url = "https://jitpack.io"
-    }
-    maven {
         name = "codemc-repo"
         url = "https://repo.codemc.io/repository/maven-public/"
-    }
-    maven {
-        name = "nexo-repo"
-        url = "https://repo.nexomc.com/releases"
     }
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
     compileOnly("net.coreprotect:coreprotect:22.4")
-    compileOnly("com.github.LoneDev6:api-itemsadder:3.6.3-beta-14")
-    compileOnly("com.nexomc:nexo:0.1.0")
     compileOnly("com.github.retrooper:packetevents-spigot:2.10.0")
+    implementation("dev.oakheart:oakheart-core:1.1.0")
+    implementation("dev.oakheart:oakheart-models:1.1.0")
     implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 
@@ -53,13 +46,18 @@ processResources {
     def props = [version: version]
     inputs.properties props
     filteringCharset 'UTF-8'
-    filesMatching(['plugin.yml', 'paper-plugin.yml']) {
+    filesMatching('paper-plugin.yml') {
         expand props
     }
 }
 
 shadowJar {
     relocate 'org.bstats', 'dev.oakheart.oaktools.bstats'
+    relocate 'dev.oakheart.config', 'dev.oakheart.oaktools.libs.config'
+    relocate 'dev.oakheart.message', 'dev.oakheart.oaktools.libs.message'
+    relocate 'dev.oakheart.command', 'dev.oakheart.oaktools.libs.command'
+    relocate 'dev.oakheart.util', 'dev.oakheart.oaktools.libs.util'
+    relocate 'dev.oakheart.models', 'dev.oakheart.oaktools.libs.models'
     archiveClassifier.set('')
 }
 

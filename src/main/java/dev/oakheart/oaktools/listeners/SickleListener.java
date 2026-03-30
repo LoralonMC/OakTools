@@ -15,6 +15,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -126,8 +128,8 @@ public class SickleListener implements Listener {
         }
 
         if (harvestedCount > 1) {
-            plugin.getMessageManager().sendMessage(player, "sickle-harvested",
-                    Map.of("count", String.valueOf(harvestedCount)));
+            plugin.getMessageManager().send(player, "sickle-harvested",
+                    Placeholder.unparsed("count", String.valueOf(harvestedCount)));
         }
     }
 
@@ -172,8 +174,8 @@ public class SickleListener implements Listener {
         }
 
         if (clearedCount > 1) {
-            plugin.getMessageManager().sendMessage(player, "sickle-harvested",
-                    Map.of("count", String.valueOf(clearedCount)));
+            plugin.getMessageManager().send(player, "sickle-harvested",
+                    Placeholder.unparsed("count", String.valueOf(clearedCount)));
         }
     }
 

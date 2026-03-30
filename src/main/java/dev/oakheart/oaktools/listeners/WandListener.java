@@ -28,9 +28,10 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class WandListener implements Listener {
 
@@ -73,7 +74,7 @@ public class WandListener implements Listener {
         }
 
         if (!plugin.getConfigManager().isWorldAllowed(player.getWorld().getName())) {
-            plugin.getMessageManager().sendMessage(player, "world-denied");
+            plugin.getMessageManager().send(player, "world-denied");
             event.setCancelled(true);
             return;
         }
@@ -119,10 +120,10 @@ public class WandListener implements Listener {
 
         int undoneCount = historyManager.undo(player);
         if (undoneCount > 0) {
-            plugin.getMessageManager().sendMessage(player, "wand-undo",
-                Map.of("count", String.valueOf(undoneCount)));
+            plugin.getMessageManager().send(player, "wand-undo",
+                Placeholder.unparsed("count", String.valueOf(undoneCount)));
         } else {
-            plugin.getMessageManager().sendMessage(player, "wand-undo-empty");
+            plugin.getMessageManager().send(player, "wand-undo-empty");
         }
     }
 
@@ -162,7 +163,7 @@ public class WandListener implements Listener {
         }
 
         if (!player.hasPermission("oaktools.use.wand")) {
-            plugin.getMessageManager().sendMessage(player, "no-permission");
+            plugin.getMessageManager().send(player, "no-permission");
             event.setCancelled(true);
             return;
         }
@@ -172,13 +173,13 @@ public class WandListener implements Listener {
         }
 
         if (!plugin.getConfigManager().isGamemodeAllowed(player.getGameMode())) {
-            plugin.getMessageManager().sendMessage(player, "gamemode-denied");
+            plugin.getMessageManager().send(player, "gamemode-denied");
             event.setCancelled(true);
             return;
         }
 
         if (!plugin.getConfigManager().isWorldAllowed(player.getWorld().getName())) {
-            plugin.getMessageManager().sendMessage(player, "world-denied");
+            plugin.getMessageManager().send(player, "world-denied");
             event.setCancelled(true);
             return;
         }
@@ -233,8 +234,8 @@ public class WandListener implements Listener {
         plugin.getDisplayService().updateDisplay(item);
 
         String modeName = plugin.getDisplayService().getWandModeDisplayName(nextMode);
-        plugin.getMessageManager().sendMessage(player, "wand-mode-changed",
-            Map.of("wand_mode", modeName));
+        plugin.getMessageManager().send(player, "wand-mode-changed",
+            Placeholder.unparsed("wand_mode", modeName));
 
         String soundName = plugin.getConfigManager().getWandModeSwitchSound();
         try {
@@ -364,8 +365,8 @@ public class WandListener implements Listener {
         SoundUtil.playPlaceSound(placements.getFirst(), placeData, plugin);
 
         // Send placement message
-        plugin.getMessageManager().sendMessage(player, "wand-placed",
-            Map.of("count", String.valueOf(placements.size())));
+        plugin.getMessageManager().send(player, "wand-placed",
+            Placeholder.unparsed("count", String.valueOf(placements.size())));
 
         plugin.debug("[Wand Debug] Placed " + placements.size() + " blocks in " + wandMode + " mode");
 

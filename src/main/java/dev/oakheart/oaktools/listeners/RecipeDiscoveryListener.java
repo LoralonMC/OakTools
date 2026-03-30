@@ -1,10 +1,10 @@
 package dev.oakheart.oaktools.listeners;
 
+import dev.oakheart.config.ConfigManager;
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.ToolType;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -115,8 +115,8 @@ public class RecipeDiscoveryListener implements Listener {
     private Set<Material> loadRecipeIngredients(String toolName) {
         Set<Material> materials = EnumSet.noneOf(Material.class);
 
-        ConfigurationSection ingredientsSection = plugin.getConfigManager().getConfig()
-                .getConfigurationSection("tools." + toolName + ".recipe.ingredients");
+        ConfigManager ingredientsSection = plugin.getConfigManager().getConfig()
+                .getSection("tools." + toolName + ".recipe.ingredients");
 
         if (ingredientsSection != null) {
             for (String key : ingredientsSection.getKeys(false)) {

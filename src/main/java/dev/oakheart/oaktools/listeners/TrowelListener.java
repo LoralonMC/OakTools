@@ -31,8 +31,9 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TrowelListener implements Listener {
@@ -75,7 +76,7 @@ public class TrowelListener implements Listener {
         }
 
         if (!plugin.getConfigManager().isWorldAllowed(player.getWorld().getName())) {
-            plugin.getMessageManager().sendMessage(player, "world-denied");
+            plugin.getMessageManager().send(player, "world-denied");
             event.setCancelled(true);
             return;
         }
@@ -120,7 +121,7 @@ public class TrowelListener implements Listener {
         }
 
         if (!player.hasPermission("oaktools.use.trowel")) {
-            plugin.getMessageManager().sendMessage(player, "no-permission");
+            plugin.getMessageManager().send(player, "no-permission");
             event.setCancelled(true);
             return;
         }
@@ -130,13 +131,13 @@ public class TrowelListener implements Listener {
         }
 
         if (!plugin.getConfigManager().isGamemodeAllowed(player.getGameMode())) {
-            plugin.getMessageManager().sendMessage(player, "gamemode-denied");
+            plugin.getMessageManager().send(player, "gamemode-denied");
             event.setCancelled(true);
             return;
         }
 
         if (!plugin.getConfigManager().isWorldAllowed(player.getWorld().getName())) {
-            plugin.getMessageManager().sendMessage(player, "world-denied");
+            plugin.getMessageManager().send(player, "world-denied");
             event.setCancelled(true);
             return;
         }
@@ -187,8 +188,8 @@ public class TrowelListener implements Listener {
         plugin.getDisplayService().updateDisplay(item);
 
         String feedSourceName = plugin.getDisplayService().getFeedSourceDisplayName(nextSource);
-        plugin.getMessageManager().sendMessage(player, "feed-source-changed",
-            Map.of("feed_source", feedSourceName));
+        plugin.getMessageManager().send(player, "feed-source-changed",
+            Placeholder.unparsed("feed_source", feedSourceName));
 
         String soundName = plugin.getConfigManager().getTrowelFeedSwitchSound();
         try {
@@ -223,8 +224,8 @@ public class TrowelListener implements Listener {
 
         if (placeableBlocks.isEmpty()) {
             String feedSourceName = plugin.getDisplayService().getFeedSourceDisplayName(feedSource);
-            plugin.getMessageManager().sendMessage(player, "no-placeable-blocks",
-                Map.of("feed_source", feedSourceName));
+            plugin.getMessageManager().send(player, "no-placeable-blocks",
+                Placeholder.unparsed("feed_source", feedSourceName));
             event.setCancelled(true);
             return;
         }
@@ -273,7 +274,7 @@ public class TrowelListener implements Listener {
 
         if (!plugin.getProtectionService().canModifyBlock(player, targetBlock, hand, item)) {
             plugin.debug("[Trowel Debug] Blocked: Protection denied");
-            plugin.getMessageManager().sendMessage(player, "protection-denied");
+            plugin.getMessageManager().send(player, "protection-denied");
             event.setCancelled(true);
             return;
         }

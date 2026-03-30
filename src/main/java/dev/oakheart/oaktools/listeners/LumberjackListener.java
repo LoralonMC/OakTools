@@ -67,7 +67,7 @@ public class LumberjackListener implements Listener {
 
         if (logs.isEmpty()) {
             // Not a natural tree — send message and let vanilla handle the single block
-            plugin.getMessageManager().sendMessage(player, "not-a-tree");
+            plugin.getMessageManager().send(player, "not-a-tree");
             return;
         }
 

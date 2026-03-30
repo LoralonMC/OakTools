@@ -57,7 +57,7 @@ public class FileListener implements Listener {
         }
 
         if (!player.hasPermission("oaktools.use.file")) {
-            plugin.getMessageManager().sendMessage(player, "no-permission");
+            plugin.getMessageManager().send(player, "no-permission");
             event.setCancelled(true);
             return;
         }
@@ -67,13 +67,13 @@ public class FileListener implements Listener {
         }
 
         if (!plugin.getConfigManager().isGamemodeAllowed(player.getGameMode())) {
-            plugin.getMessageManager().sendMessage(player, "gamemode-denied");
+            plugin.getMessageManager().send(player, "gamemode-denied");
             event.setCancelled(true);
             return;
         }
 
         if (!plugin.getConfigManager().isWorldAllowed(player.getWorld().getName())) {
-            plugin.getMessageManager().sendMessage(player, "world-denied");
+            plugin.getMessageManager().send(player, "world-denied");
             event.setCancelled(true);
             return;
         }
@@ -112,7 +112,7 @@ public class FileListener implements Listener {
         // Protection check only for modifiable blocks
         if (!plugin.getProtectionService().canModifyBlock(player, block, hand, item)) {
             plugin.debug("[File Debug] Blocked: Protection denied");
-            plugin.getMessageManager().sendMessage(player, "protection-denied");
+            plugin.getMessageManager().send(player, "protection-denied");
             event.setCancelled(true);
             return;
         }
