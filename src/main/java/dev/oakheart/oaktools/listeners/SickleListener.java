@@ -22,13 +22,16 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Handles the Sickle's crop harvesting and auto-replant on BlockBreakEvent.
  * When a player breaks a mature crop while holding a sickle, surrounding
  * mature crops of the same type are harvested, replanted, and drops fall naturally.
+ *
+ * <p>Unlike the other OakTools tools, the Sickle is a plain vanilla hoe and uses
+ * vanilla durability/enchanting/repair (no PDC durability tracking). Because this
+ * listener cancels the break event, durability is applied manually below.
  */
 public class SickleListener implements Listener {
 

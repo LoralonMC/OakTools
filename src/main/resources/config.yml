@@ -70,6 +70,12 @@ tools:
       directional: true
       axis-rotation: true
       slabs: true
+    # Prevent the File tool from rotating extended (powered) pistons.
+    # Rotating an extended piston base desyncs it from its head, which can leave a
+    # floating piston head and enable block-duplication glitches. When true, extended
+    # PISTON/STICKY_PISTON bases, PISTON_HEAD, and MOVING_PISTON are skipped.
+    # Retracted pistons can still be rotated normally.
+    protect-extended-pistons: true
     # Blocks the File tool will not interact with (right-click passes through)
     excluded-blocks:
       # Torches

@@ -33,6 +33,23 @@ public class BlockUtil {
         return block.getBlockData() instanceof Directional;
     }
 
+    /**
+     * Whether this block is a piston that should not be rotated by the File tool.
+     * Rotating an <em>extended</em> piston base desyncs it from its head, which can
+     * leave a floating head and enable block-duplication glitches. Retracted pistons
+     * are safe to rotate and are not protected.
+     *
+     * @return true for an extended PISTON/STICKY_PISTON base, a PISTON_HEAD, or a
+     *         MOVING_PISTON; false otherwise (including retracted piston bases)
+     */
+    public static boolean isProtectedPiston(Block block) {
+        Material type = block.getType();
+        if (type == Material.PISTON_HEAD || type == Material.MOVING_PISTON) {
+            return true;
+        }
+        return block.getBlockData() instanceof org.bukkit.block.data.type.Piston piston && piston.isExtended();
+    }
+
     public static boolean hasAxis(Block block) {
         return block.getBlockData() instanceof Orientable;
     }

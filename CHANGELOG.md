@@ -7,18 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Migrate to OakheartLib shared library (oakheart-core for config/messages/commands, oakheart-models for model providers)
-- Messages moved from config.yml to standalone messages.yml (auto-migrated on first load)
-- Replace Bukkit FileConfiguration with OakheartLib ConfigManager (format-preserving YAML)
-- Replace local ModelProviderManager with shared oakheart-models library
-- Update Paper API to 1.21.10
-
-### Removed
-
-- Local MessageManager, ModelProvider, and model provider implementations (replaced by OakheartLib)
-
 ### Added
 
 - Excavation Shovel harvesting tool — mines a 3x3 area of shovel-mineable blocks on the clicked face with animated one-by-one breaking
@@ -31,10 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sickle tool — tiered crop harvesting with auto-replant (wooden through netherite, vanilla durability/enchanting/repair)
 - Enchanting table blocked for "locked" tools (tools with empty allowed-enchantments)
 - Per-tool `unbreakable` config option for infinite durability
+- File tool now protects extended (powered) pistons from rotation by default, preventing piston head desync and block-duplication glitches. Configurable via `tools.file.protect-extended-pistons` (retracted pistons remain editable)
+- Config validation now warns when `tools.excavator.grid-size` is set to an even number (it is rounded up to the next odd value)
 
 ### Changed
 
+- Migrate to OakheartLib shared library (oakheart-core for config/messages/commands, oakheart-models for model providers)
+- Messages moved from config.yml to standalone messages.yml (auto-migrated on first load)
+- Replace Bukkit FileConfiguration with OakheartLib ConfigManager (format-preserving YAML)
+- Replace local ModelProviderManager with shared oakheart-models library
+- Update to Paper 26.1.2 / Java 25
 - Wand placement preview now uses packet-based entities via PacketEvents when available (zero server overhead, no real entities spawned). Falls back to real slime entities if PacketEvents is not installed.
+
+### Removed
+
+- Local MessageManager, ModelProvider, and model provider implementations (replaced by OakheartLib)
 
 ### Fixed
 

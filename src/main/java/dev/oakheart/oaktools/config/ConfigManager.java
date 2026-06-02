@@ -70,6 +70,7 @@ public class ConfigManager {
     private boolean cachedFeatureDirectional = true;
     private boolean cachedFeatureAxisRotation = true;
     private boolean cachedFeatureSlabs = true;
+    private boolean cachedProtectExtendedPistons = true;
 
     // Harvesting tool settings
     private boolean cachedExcavatorEnabled = true;
@@ -233,6 +234,7 @@ public class ConfigManager {
         cachedFeatureDirectional = config.getBoolean("tools.file.features.directional", true);
         cachedFeatureAxisRotation = config.getBoolean("tools.file.features.axis-rotation", true);
         cachedFeatureSlabs = config.getBoolean("tools.file.features.slabs", true);
+        cachedProtectExtendedPistons = config.getBoolean("tools.file.protect-extended-pistons", true);
 
         // CoreProtect integration
         cachedCoreProtectEnabled = config.getBoolean("integration.coreprotect.enabled", true);
@@ -507,6 +509,10 @@ public class ConfigManager {
 
     public boolean isFeatureSlabs() {
         return cachedFeatureSlabs;
+    }
+
+    public boolean isProtectExtendedPistons() {
+        return cachedProtectExtendedPistons;
     }
 
     public boolean isGamemodeAllowed(GameMode mode) {

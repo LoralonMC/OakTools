@@ -46,8 +46,8 @@ An extension tool that places copies of existing blocks in bulk. Two placement m
 
 ## Requirements
 
-- Paper 1.21.8+ (or compatible fork)
-- Java 21+
+- Paper 26.1.2+ (or compatible fork)
+- Java 25+
 
 ## Installation
 

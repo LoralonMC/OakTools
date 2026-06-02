@@ -54,6 +54,10 @@ public class FileListener implements Listener {
             if (plugin.getConfigManager().getExcludedFileMaterials().contains(clickedBlock.getType())) {
                 return;
             }
+
+            if (plugin.getConfigManager().isProtectExtendedPistons() && BlockUtil.isProtectedPiston(clickedBlock)) {
+                return;
+            }
         }
 
         if (!player.hasPermission("oaktools.use.file")) {

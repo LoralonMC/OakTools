@@ -250,6 +250,12 @@ public class ConfigValidator {
             warnings.add("tools.lumberjack.min-leaves must be 1-20. Found: " + minLeaves);
         }
 
+        int gridSize = config.getInt("tools.excavator.grid-size", 3);
+        if (gridSize % 2 == 0) {
+            warnings.add("tools.excavator.grid-size should be an odd number; " + gridSize
+                    + " will be rounded up to " + (gridSize + 1) + ".");
+        }
+
         return valid;
     }
 }
