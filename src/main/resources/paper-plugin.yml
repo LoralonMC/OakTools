@@ -2,7 +2,7 @@ name: OakTools
 version: '${version}'
 main: dev.oakheart.oaktools.OakTools
 description: 'Player-friendly building utilities for survival.'
-api-version: '26.1.2'
+api-version: '1.21'
 authors:
   - Loralon
 website: https://github.com/LoralonMC/OakTools

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'dev.oakheart'
-version = '2.0.0'
+version = '2.0.0-1.21.11'
 
 repositories {
     mavenLocal()
@@ -24,11 +24,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("net.coreprotect:coreprotect:22.4")
     compileOnly("com.github.retrooper:packetevents-spigot:2.10.0")
-    implementation("dev.oakheart:oakheart-core:1.2.0")
-    implementation("dev.oakheart:oakheart-models:1.2.0")
+    implementation("dev.oakheart:oakheart-core:1.1.1")
+    implementation("dev.oakheart:oakheart-models:1.1.0")
     implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 
@@ -38,7 +38,8 @@ java {
 
 compileJava {
     options.encoding = 'UTF-8'
-    options.release = 25
+    // 1.21.11 backport: emit Java 21 bytecode (cross-compiled by the installed JDK 25 toolchain)
+    options.release = 21
     options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 }
 
