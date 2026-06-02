@@ -5,46 +5,33 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.util.Vector3f;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
-import dev.oakheart.oaktools.OakTools;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Spawns and destroys invisible glowing slime entities via PacketEvents packets.
- * Entities exist only client-side — zero server overhead.
+ * Spawns and destroys client-only block-display "beam" entities via PacketEvents packets.
+ * Entities exist only on the target player's client — zero server overhead.
  */
 public class PacketPreviewRenderer {
 
-    // Entity metadata indices (Minecraft 1.21.x protocol)
-    private static final int INDEX_BASE_FLAGS = 0;
-    private static final int INDEX_SILENT = 4;
-    private static final int INDEX_NO_GRAVITY = 5;
-    private static final int INDEX_MOB_FLAGS = 15;
-    private static final int INDEX_SLIME_SIZE = 16;
+    // Display entity metadata indices (Minecraft 1.21.x protocol)
+    private static final int INDEX_DISPLAY_TRANSLATION = 11;
+    private static final int INDEX_DISPLAY_SCALE = 12;
+    private static final int INDEX_DISPLAY_BRIGHTNESS = 16;
+    private static final int INDEX_BLOCK_DISPLAY_STATE = 23;
 
-    // Base entity flags
-    private static final byte FLAG_INVISIBLE = 0x20;
-    private static final byte FLAG_GLOWING = 0x40;
-
-    // Mob flags
-    private static final byte MOB_FLAG_NO_AI = 0x01;
-
-    // Pre-built metadata (identical for every preview entity)
-    private static final List<EntityData<?>> SLIME_METADATA = List.of(
-            new EntityData<>(INDEX_BASE_FLAGS, EntityDataTypes.BYTE, (byte) (FLAG_INVISIBLE | FLAG_GLOWING)),
-            new EntityData<>(INDEX_SILENT, EntityDataTypes.BOOLEAN, true),
-            new EntityData<>(INDEX_NO_GRAVITY, EntityDataTypes.BOOLEAN, true),
-            new EntityData<>(INDEX_MOB_FLAGS, EntityDataTypes.BYTE, MOB_FLAG_NO_AI),
-            new EntityData<>(INDEX_SLIME_SIZE, EntityDataTypes.INT, 2)
-    );
+    // Packed brightness: blockLight in bits 4-7, skyLight in bits 20-23. Full-bright = 15/15.
+    private static final int FULL_BRIGHT = (15 << 4) | (15 << 20);
 
     private static final AtomicInteger ENTITY_ID_COUNTER = new AtomicInteger(1_000_000_000);
 
@@ -57,22 +44,42 @@ public class PacketPreviewRenderer {
     }
 
     /**
-     * Spawns an invisible glowing slime at the given block-center position, visible only to the target player.
+     * Spawns a thin block-display "beam" at the given position, visible only to the target player.
+     * The translation/scale turn the unit block model into a beam; {@code blockStateId} is the
+     * global palette id of the block to display (see {@link #blockStateId}).
      */
-    public static void spawnSlime(Player player, int entityId, UUID entityUuid, double x, double y, double z) {
+    public static void spawnBlockDisplay(Player player, int entityId, UUID entityUuid,
+                                         double x, double y, double z,
+                                         float tx, float ty, float tz,
+                                         float sx, float sy, float sz, int blockStateId) {
         WrapperPlayServerSpawnEntity spawnPacket = new WrapperPlayServerSpawnEntity(
-                entityId, Optional.of(entityUuid), EntityTypes.SLIME,
+                entityId, Optional.of(entityUuid), EntityTypes.BLOCK_DISPLAY,
                 new Vector3d(x, y, z),
                 0f, 0f, 0f, 0, Optional.empty()
         );
 
+        List<EntityData<?>> metadata = List.of(
+                new EntityData<>(INDEX_DISPLAY_TRANSLATION, EntityDataTypes.VECTOR3F, new Vector3f(tx, ty, tz)),
+                new EntityData<>(INDEX_DISPLAY_SCALE, EntityDataTypes.VECTOR3F, new Vector3f(sx, sy, sz)),
+                new EntityData<>(INDEX_DISPLAY_BRIGHTNESS, EntityDataTypes.INT, FULL_BRIGHT),
+                new EntityData<>(INDEX_BLOCK_DISPLAY_STATE, EntityDataTypes.BLOCK_STATE, blockStateId)
+        );
+
         WrapperPlayServerEntityMetadata metadataPacket = new WrapperPlayServerEntityMetadata(
-                entityId, SLIME_METADATA
+                entityId, metadata
         );
 
         var playerManager = PacketEvents.getAPI().getPlayerManager();
         playerManager.sendPacket(player, spawnPacket);
         playerManager.sendPacket(player, metadataPacket);
+    }
+
+    /**
+     * Resolves the global palette block-state id for a Bukkit {@link BlockData}, for use as a
+     * block-display's displayed block.
+     */
+    public static int blockStateId(BlockData blockData) {
+        return SpigotConversionUtil.fromBukkitBlockData(blockData).getGlobalId();
     }
 
     /**
@@ -82,24 +89,5 @@ public class PacketPreviewRenderer {
         if (entityIds.length == 0) return;
         WrapperPlayServerDestroyEntities destroyPacket = new WrapperPlayServerDestroyEntities(entityIds);
         PacketEvents.getAPI().getPlayerManager().sendPacket(player, destroyPacket);
-    }
-
-    /**
-     * Creates and registers the packet listener that intercepts clicks on fake preview entities.
-     * Returns an opaque handle for later unregistration.
-     */
-    public static PreviewPacketListener registerClickListener(OakTools plugin, Set<Integer> fakeEntityIds) {
-        PreviewPacketListener listener = new PreviewPacketListener(plugin, fakeEntityIds);
-        listener.register();
-        return listener;
-    }
-
-    /**
-     * Unregisters a previously registered click listener.
-     */
-    public static void unregisterClickListener(PreviewPacketListener listener) {
-        if (listener != null) {
-            listener.unregister();
-        }
     }
 }

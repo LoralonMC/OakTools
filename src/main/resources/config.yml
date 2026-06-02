@@ -393,12 +393,16 @@ tools:
       max-history: 5
       expire-seconds: 300
     preview:
+      # Shows a wireframe outline of the blocks the wand will place.
+      # Requires the PacketEvents plugin — without it the wand still works, but no preview is shown.
       enabled: true
       interval-ticks: 5
-      # Glow outline color (scoreboard team colors):
+      # Wireframe line thickness, in blocks (0.01-0.5)
+      line-thickness: 0.05
+      # Wireframe line color:
       # black, dark_blue, dark_green, dark_aqua, dark_red, dark_purple,
       # gold, gray, dark_gray, blue, green, aqua, red, light_purple, yellow, white
-      glow-color: YELLOW
+      line-color: YELLOW
     mode-names:
       face: "Face"
       line: "Line"

@@ -214,10 +214,15 @@ public class ConfigValidator {
             warnings.add("tools.wand.preview.interval-ticks must be 1-40. Found: " + previewInterval);
         }
 
-        String glowColor = config.getString("tools.wand.preview.glow-color", "YELLOW");
-        if (NamedTextColor.NAMES.value(glowColor.toLowerCase()) == null) {
-            warnings.add("tools.wand.preview.glow-color '" + glowColor + "' is not a valid color. Valid: " +
+        String lineColor = config.getString("tools.wand.preview.line-color", "YELLOW");
+        if (NamedTextColor.NAMES.value(lineColor.toLowerCase()) == null) {
+            warnings.add("tools.wand.preview.line-color '" + lineColor + "' is not a valid color. Valid: " +
                     String.join(", ", NamedTextColor.NAMES.keys()));
+        }
+
+        double lineThickness = config.getDouble("tools.wand.preview.line-thickness", 0.05);
+        if (lineThickness < 0.01 || lineThickness > 0.5) {
+            warnings.add("tools.wand.preview.line-thickness must be 0.01-0.5. Found: " + lineThickness);
         }
 
         return true;

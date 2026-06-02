@@ -57,7 +57,8 @@ public class ConfigManager {
     private int cachedWandUndoExpireSeconds = 300;
     private boolean cachedWandPreviewEnabled = true;
     private int cachedWandPreviewIntervalTicks = 5;
-    private NamedTextColor cachedWandPreviewGlowColor = NamedTextColor.YELLOW;
+    private NamedTextColor cachedWandPreviewLineColor = NamedTextColor.YELLOW;
+    private float cachedWandPreviewLineThickness = 0.05f;
 
     // World restrictions
     private String cachedWorldsMode = "BLACKLIST";
@@ -212,9 +213,10 @@ public class ConfigManager {
         cachedWandUndoExpireSeconds = config.getInt("tools.wand.undo.expire-seconds", 300);
         cachedWandPreviewEnabled = config.getBoolean("tools.wand.preview.enabled", true);
         cachedWandPreviewIntervalTicks = config.getInt("tools.wand.preview.interval-ticks", 5);
-        cachedWandPreviewGlowColor = parseNamedColor(
-                config.getString("tools.wand.preview.glow-color", "YELLOW"),
+        cachedWandPreviewLineColor = parseNamedColor(
+                config.getString("tools.wand.preview.line-color", "YELLOW"),
                 NamedTextColor.YELLOW);
+        cachedWandPreviewLineThickness = (float) config.getDouble("tools.wand.preview.line-thickness", 0.05);
         cachedCreativeConsumeDurability = config.getBoolean("general.restrictions.gamemode.creative.consume-durability", true);
         cachedAdventureConsumeDurability = config.getBoolean("general.restrictions.gamemode.adventure.consume-durability", true);
         cachedCreativeAllowUse = config.getBoolean("general.restrictions.gamemode.creative.allow-use", true);
@@ -620,8 +622,12 @@ public class ConfigManager {
         return cachedWandPreviewIntervalTicks;
     }
 
-    public NamedTextColor getWandPreviewGlowColor() {
-        return cachedWandPreviewGlowColor;
+    public NamedTextColor getWandPreviewLineColor() {
+        return cachedWandPreviewLineColor;
+    }
+
+    public float getWandPreviewLineThickness() {
+        return cachedWandPreviewLineThickness;
     }
 
     // Harvesting tool getters

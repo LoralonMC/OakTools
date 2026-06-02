@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace Bukkit FileConfiguration with OakheartLib ConfigManager (format-preserving YAML)
 - Replace local ModelProviderManager with shared oakheart-models library
 - Update to Paper 26.1.2 / Java 25
-- Wand placement preview now uses packet-based entities via PacketEvents when available (zero server overhead, no real entities spawned). Falls back to real slime entities if PacketEvents is not installed.
+- Builder's Wand preview redesigned as a wireframe outline of the blocks that will be placed (replacing the glow highlight), drawn with client-only packet block-displays (no collision). The preview now requires PacketEvents — without it the wand still works, but no preview is shown. New `tools.wand.preview.line-thickness` and `tools.wand.preview.line-color` options (`line-color` replaces the preview's old `glow-color`).
 
 ### Removed
 
