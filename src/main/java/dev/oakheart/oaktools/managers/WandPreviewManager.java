@@ -197,8 +197,10 @@ public class WandPreviewManager implements Listener {
 
         int[] entityIds = wireframeRenderer.spawn(
                 player, placements,
-                plugin.getConfigManager().getWandPreviewLineColor(),
-                plugin.getConfigManager().getWandPreviewLineThickness());
+                plugin.getConfigManager().getWandPreviewColorArgb(),
+                plugin.getConfigManager().getWandPreviewColorBlock(),
+                plugin.getConfigManager().getWandPreviewLineThickness(),
+                plugin.getConfigManager().isWandPreviewTextBeams());
 
         if (entityIds.length == 0) {
             return;

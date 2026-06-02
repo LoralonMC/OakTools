@@ -6,7 +6,7 @@ import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.model.WandMode;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import net.kyori.adventure.text.format.NamedTextColor;
+import dev.oakheart.oaktools.util.PreviewColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -57,8 +57,10 @@ public class ConfigManager {
     private int cachedWandUndoExpireSeconds = 300;
     private boolean cachedWandPreviewEnabled = true;
     private int cachedWandPreviewIntervalTicks = 5;
-    private NamedTextColor cachedWandPreviewLineColor = NamedTextColor.YELLOW;
+    private int cachedWandPreviewColorArgb = PreviewColor.DEFAULT_ARGB;
+    private Material cachedWandPreviewColorBlock = Material.YELLOW_CONCRETE;
     private float cachedWandPreviewLineThickness = 0.05f;
+    private boolean cachedWandPreviewTextBeams = false;
 
     // World restrictions
     private String cachedWorldsMode = "BLACKLIST";
@@ -213,10 +215,11 @@ public class ConfigManager {
         cachedWandUndoExpireSeconds = config.getInt("tools.wand.undo.expire-seconds", 300);
         cachedWandPreviewEnabled = config.getBoolean("tools.wand.preview.enabled", true);
         cachedWandPreviewIntervalTicks = config.getInt("tools.wand.preview.interval-ticks", 5);
-        cachedWandPreviewLineColor = parseNamedColor(
-                config.getString("tools.wand.preview.line-color", "YELLOW"),
-                NamedTextColor.YELLOW);
+        cachedWandPreviewColorArgb = PreviewColor.parseArgb(
+                config.getString("tools.wand.preview.line-color", "YELLOW"), PreviewColor.DEFAULT_ARGB);
+        cachedWandPreviewColorBlock = PreviewColor.nearestConcrete(cachedWandPreviewColorArgb);
         cachedWandPreviewLineThickness = (float) config.getDouble("tools.wand.preview.line-thickness", 0.05);
+        cachedWandPreviewTextBeams = config.getString("tools.wand.preview.beam-type", "block").equalsIgnoreCase("text");
         cachedCreativeConsumeDurability = config.getBoolean("general.restrictions.gamemode.creative.consume-durability", true);
         cachedAdventureConsumeDurability = config.getBoolean("general.restrictions.gamemode.adventure.consume-durability", true);
         cachedCreativeAllowUse = config.getBoolean("general.restrictions.gamemode.creative.allow-use", true);
@@ -622,12 +625,22 @@ public class ConfigManager {
         return cachedWandPreviewIntervalTicks;
     }
 
-    public NamedTextColor getWandPreviewLineColor() {
-        return cachedWandPreviewLineColor;
+    /** Preview color as ARGB (used directly by text-display beams, alpha included). */
+    public int getWandPreviewColorArgb() {
+        return cachedWandPreviewColorArgb;
+    }
+
+    /** Nearest concrete block to the preview color (used by block-display beams). */
+    public Material getWandPreviewColorBlock() {
+        return cachedWandPreviewColorBlock;
     }
 
     public float getWandPreviewLineThickness() {
         return cachedWandPreviewLineThickness;
+    }
+
+    public boolean isWandPreviewTextBeams() {
+        return cachedWandPreviewTextBeams;
     }
 
     // Harvesting tool getters
@@ -695,19 +708,6 @@ public class ConfigManager {
 
     public boolean isLogHarvestingBreaks() {
         return cachedLogHarvestingBreaks;
-    }
-
-    private NamedTextColor parseNamedColor(String name, NamedTextColor fallback) {
-        if (name == null || name.isEmpty()) {
-            return fallback;
-        }
-        NamedTextColor color = NamedTextColor.NAMES.value(name.toLowerCase());
-        if (color == null) {
-            logger.warning("Invalid glow color '" + name + "' — using default. Valid: " +
-                    String.join(", ", NamedTextColor.NAMES.keys()));
-            return fallback;
-        }
-        return color;
     }
 
     // Sickle getters

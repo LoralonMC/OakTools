@@ -2,7 +2,7 @@ package dev.oakheart.oaktools.config;
 
 import dev.oakheart.config.ConfigManager;
 import dev.oakheart.oaktools.model.ToolType;
-import net.kyori.adventure.text.format.NamedTextColor;
+import dev.oakheart.oaktools.util.PreviewColor;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
@@ -215,14 +215,19 @@ public class ConfigValidator {
         }
 
         String lineColor = config.getString("tools.wand.preview.line-color", "YELLOW");
-        if (NamedTextColor.NAMES.value(lineColor.toLowerCase()) == null) {
-            warnings.add("tools.wand.preview.line-color '" + lineColor + "' is not a valid color. Valid: " +
-                    String.join(", ", NamedTextColor.NAMES.keys()));
+        if (!PreviewColor.isValid(lineColor)) {
+            warnings.add("tools.wand.preview.line-color '" + lineColor +
+                    "' is not a valid color. Use a named color or a hex code (#RRGGBB or #AARRGGBB).");
         }
 
         double lineThickness = config.getDouble("tools.wand.preview.line-thickness", 0.05);
         if (lineThickness < 0.01 || lineThickness > 0.5) {
             warnings.add("tools.wand.preview.line-thickness must be 0.01-0.5. Found: " + lineThickness);
+        }
+
+        String beamType = config.getString("tools.wand.preview.beam-type", "block");
+        if (!beamType.equalsIgnoreCase("block") && !beamType.equalsIgnoreCase("text")) {
+            warnings.add("tools.wand.preview.beam-type must be 'block' or 'text'. Found: " + beamType);
         }
 
         return true;

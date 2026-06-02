@@ -399,10 +399,18 @@ tools:
       interval-ticks: 5
       # Wireframe line thickness, in blocks (0.01-0.5)
       line-thickness: 0.05
-      # Wireframe line color:
-      # black, dark_blue, dark_green, dark_aqua, dark_red, dark_purple,
-      # gold, gray, dark_gray, blue, green, aqua, red, light_purple, yellow, white
+      # Wireframe line color. Accepts a named color OR a hex code:
+      #   named: black, dark_blue, dark_green, dark_aqua, dark_red, dark_purple,
+      #          gold, gray, dark_gray, blue, green, aqua, red, light_purple, yellow, white
+      #   hex:   #RRGGBB, or #AARRGGBB to include alpha
+      # Text beams use the exact color and honor alpha (translucency); block beams snap to the
+      # nearest concrete color and are always opaque.
       line-color: YELLOW
+      # Beam rendering primitive:
+      #   block - solid 3D block-display beams, consistent from every angle (recommended)
+      #   text  - flat double-sided text-display ribbons; crisp and exact-colored, but thinner at
+      #           grazing angles and uses ~2x as many entities
+      beam-type: block
     mode-names:
       face: "Face"
       line: "Line"

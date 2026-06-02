@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace Bukkit FileConfiguration with OakheartLib ConfigManager (format-preserving YAML)
 - Replace local ModelProviderManager with shared oakheart-models library
 - Update to Paper 26.1.2 / Java 25
-- Builder's Wand preview redesigned as a wireframe outline of the blocks that will be placed (replacing the glow highlight), drawn with client-only packet block-displays (no collision). The preview now requires PacketEvents — without it the wand still works, but no preview is shown. New `tools.wand.preview.line-thickness` and `tools.wand.preview.line-color` options (`line-color` replaces the preview's old `glow-color`).
+- Builder's Wand preview redesigned as a wireframe outline of the blocks that will be placed (replacing the glow highlight), drawn with client-only packet displays (no collision). The preview now requires PacketEvents — without it the wand still works, but no preview is shown. New options: `tools.wand.preview.line-thickness`, `tools.wand.preview.line-color` (replaces the preview's old `glow-color`; accepts a named color or a `#RRGGBB`/`#AARRGGBB` hex code), and `tools.wand.preview.beam-type` (`block` block-display beams, default, or `text` flat text-display ribbons). Text beams use the exact color and honor alpha translucency; block beams snap to the nearest concrete color.
 
 ### Removed
 

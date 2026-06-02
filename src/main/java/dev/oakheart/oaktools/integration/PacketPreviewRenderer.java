@@ -4,12 +4,14 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
+import com.github.retrooper.packetevents.util.Quaternion4f;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.util.Vector3f;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import net.kyori.adventure.text.Component;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
@@ -27,8 +29,13 @@ public class PacketPreviewRenderer {
     // Display entity metadata indices (Minecraft 1.21.x protocol)
     private static final int INDEX_DISPLAY_TRANSLATION = 11;
     private static final int INDEX_DISPLAY_SCALE = 12;
+    private static final int INDEX_DISPLAY_LEFT_ROTATION = 13;
     private static final int INDEX_DISPLAY_BRIGHTNESS = 16;
     private static final int INDEX_BLOCK_DISPLAY_STATE = 23;
+    private static final int INDEX_TEXT_DISPLAY_TEXT = 23;
+    private static final int INDEX_TEXT_DISPLAY_BACKGROUND = 25;
+
+    private static final Component SINGLE_SPACE = Component.text(" ");
 
     // Packed brightness: blockLight in bits 4-7, skyLight in bits 20-23. Full-bright = 15/15.
     private static final int FULL_BRIGHT = (15 << 4) | (15 << 20);
@@ -80,6 +87,40 @@ public class PacketPreviewRenderer {
      */
     public static int blockStateId(BlockData blockData) {
         return SpigotConversionUtil.fromBukkitBlockData(blockData).getGlobalId();
+    }
+
+    /**
+     * Spawns a thin text-display "beam" (a flat coloured ribbon) at the given position, visible
+     * only to the target player. The translation/left-rotation/scale turn a single-space text
+     * background into a flat beam; {@code argb} is the background colour (0xAARRGGBB).
+     */
+    public static void spawnTextDisplay(Player player, int entityId, UUID entityUuid,
+                                        double x, double y, double z,
+                                        float tx, float ty, float tz,
+                                        float qx, float qy, float qz, float qw,
+                                        float sx, float sy, float sz, int argb) {
+        WrapperPlayServerSpawnEntity spawnPacket = new WrapperPlayServerSpawnEntity(
+                entityId, Optional.of(entityUuid), EntityTypes.TEXT_DISPLAY,
+                new Vector3d(x, y, z),
+                0f, 0f, 0f, 0, Optional.empty()
+        );
+
+        List<EntityData<?>> metadata = List.of(
+                new EntityData<>(INDEX_DISPLAY_TRANSLATION, EntityDataTypes.VECTOR3F, new Vector3f(tx, ty, tz)),
+                new EntityData<>(INDEX_DISPLAY_LEFT_ROTATION, EntityDataTypes.QUATERNION, new Quaternion4f(qx, qy, qz, qw)),
+                new EntityData<>(INDEX_DISPLAY_SCALE, EntityDataTypes.VECTOR3F, new Vector3f(sx, sy, sz)),
+                new EntityData<>(INDEX_DISPLAY_BRIGHTNESS, EntityDataTypes.INT, FULL_BRIGHT),
+                new EntityData<>(INDEX_TEXT_DISPLAY_TEXT, EntityDataTypes.ADV_COMPONENT, SINGLE_SPACE),
+                new EntityData<>(INDEX_TEXT_DISPLAY_BACKGROUND, EntityDataTypes.INT, argb)
+        );
+
+        WrapperPlayServerEntityMetadata metadataPacket = new WrapperPlayServerEntityMetadata(
+                entityId, metadata
+        );
+
+        var playerManager = PacketEvents.getAPI().getPlayerManager();
+        playerManager.sendPacket(player, spawnPacket);
+        playerManager.sendPacket(player, metadataPacket);
     }
 
     /**
