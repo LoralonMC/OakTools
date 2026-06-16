@@ -306,7 +306,8 @@ public class WandListener implements Listener {
         boolean consumeBlocks = plugin.getConfigManager().shouldConsumeBlocks(player.getGameMode());
         if (consumeBlocks) {
             int available = InventoryUtil.countMaterial(player, consumeMaterial);
-            // Include offhand in count when using offhand override (countMaterial only covers slots 0-35)
+            // countMaterial only covers main storage (slots 0-35), so add the offhand
+            // override stack explicitly — otherwise it would be counted twice and dupe.
             if (overrideItem != null) {
                 available += overrideItem.getAmount();
             }
@@ -375,12 +376,15 @@ public class WandListener implements Listener {
 
     /**
      * Consume blocks from main inventory (slots 0-35). Returns the number of blocks still needed.
+     * The offhand (slot 40) is excluded here and consumed separately by {@link #consumeFromOffhand}
+     * so override blocks aren't double-counted.
      */
     private int consumeBlocks(Player player, Material material, int amount) {
         PlayerInventory inventory = player.getInventory();
         int remaining = amount;
 
-        for (int i = 0; i < inventory.getSize() && remaining > 0; i++) {
+        int storageSize = inventory.getStorageContents().length;
+        for (int i = 0; i < storageSize && remaining > 0; i++) {
             ItemStack slot = inventory.getItem(i);
             if (slot != null && slot.getType() == material) {
                 if (slot.getAmount() > remaining) {

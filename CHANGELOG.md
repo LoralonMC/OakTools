@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Builder's Wand block duplication when placing from the offhand override stack — offhand blocks were counted (and the placement limit calculated) twice, letting the wand place more blocks than were consumed. Inventory counting and consumption now scan only the main storage (slots 0-35), with the offhand handled exclusively by the override logic
+
 ### Added
 
 - Excavation Shovel harvesting tool — mines a 3x3 area of shovel-mineable blocks on the clicked face with animated one-by-one breaking
