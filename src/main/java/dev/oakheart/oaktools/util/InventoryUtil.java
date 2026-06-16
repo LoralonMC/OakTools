@@ -162,13 +162,15 @@ public class InventoryUtil {
     }
 
     /**
-     * Count total amount of a specific material in a player's inventory.
+     * Count total amount of a specific material in a player's main storage (slots 0-35).
+     * <p>
+     * Armor and offhand are deliberately excluded — {@code getStorageContents()} covers only
+     * the hotbar and main inventory. The offhand is handled separately by the wand override
+     * logic, so including it here would double-count override blocks.
      */
     public static int countMaterial(Player player, Material material) {
         int count = 0;
-        PlayerInventory inventory = player.getInventory();
-        for (int i = 0; i < inventory.getSize(); i++) {
-            ItemStack slot = inventory.getItem(i);
+        for (ItemStack slot : player.getInventory().getStorageContents()) {
             if (slot != null && slot.getType() == material) {
                 count += slot.getAmount();
             }
