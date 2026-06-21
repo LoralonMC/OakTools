@@ -266,6 +266,12 @@ public class TrowelListener implements Listener {
             waterloggable.setWaterlogged(true);
         }
 
+        // Leaves default to persistent=false (decay state). Player-placed leaves never decay,
+        // so mark trowel-placed leaves persistent to match vanilla hand-placement behavior.
+        if (placementData instanceof org.bukkit.block.data.type.Leaves leaves) {
+            leaves.setPersistent(true);
+        }
+
         if (wouldCollideWithPlayer(targetBlock, player)) {
             plugin.debug("[Trowel Debug] Blocked: Block would collide with player");
             event.setCancelled(true);

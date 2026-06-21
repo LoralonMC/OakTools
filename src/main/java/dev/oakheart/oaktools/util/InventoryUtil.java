@@ -150,6 +150,14 @@ public class InventoryUtil {
                 return false;
         }
 
+        // Allow specific decorative non-solid blocks that place safely as single blocks
+        // (they sit on top of the target and need no support/orientation handling).
+        // Carpets cover all 16 dyed colors plus MOSS_CARPET / PALE_MOSS_CARPET.
+        if (material == Material.AZALEA || material == Material.FLOWERING_AZALEA ||
+            material.name().contains("CARPET")) {
+            return true;
+        }
+
         // Exclude air and replaceable blocks (these are targets, not placeable)
         if (!material.isSolid() && !material.name().contains("GLASS") &&
             !material.name().contains("FENCE") && !material.name().contains("PANE") &&

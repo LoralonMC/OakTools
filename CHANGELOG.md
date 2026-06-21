@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Leaves placed by the Trowel decaying and disappearing shortly after placement — trowel-placed leaves were left in the non-persistent (decay) state, unlike leaves placed by hand. They are now marked persistent so they never decay
 - Builder's Wand block duplication when placing from the offhand override stack — offhand blocks were counted (and the placement limit calculated) twice, letting the wand place more blocks than were consumed. Inventory counting and consumption now scan only the main storage (slots 0-35), with the offhand handled exclusively by the override logic
 
 ### Added
 
+- Trowel can now place Azalea, Flowering Azalea, and all carpets (16 dyed colors plus Moss Carpet and Pale Moss Carpet)
 - Excavation Shovel harvesting tool — mines a 3x3 area of shovel-mineable blocks on the clicked face with animated one-by-one breaking
 - Animated breaking system with per-block break particles, sound effects, and crack animation via PacketEvents
 - Sneak while breaking to disable multi-block activation (mine single blocks normally)
