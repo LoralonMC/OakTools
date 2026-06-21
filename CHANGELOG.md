@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Plugin failing to enable on servers without CoreProtect installed — the CoreProtect integration referenced a CoreProtect class during initialization regardless of whether the (soft-dependency) plugin was present, throwing `NoClassDefFoundError` and disabling all of OakTools. The API is now resolved only after confirming CoreProtect is loaded
 - Leaves placed by the Trowel decaying and disappearing shortly after placement — trowel-placed leaves were left in the non-persistent (decay) state, unlike leaves placed by hand. They are now marked persistent so they never decay
 - Builder's Wand block duplication when placing from the offhand override stack — offhand blocks were counted (and the placement limit calculated) twice, letting the wand place more blocks than were consumed. Inventory counting and consumption now scan only the main storage (slots 0-35), with the offhand handled exclusively by the override logic
 

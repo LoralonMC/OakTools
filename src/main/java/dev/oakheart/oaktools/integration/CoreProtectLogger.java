@@ -26,12 +26,16 @@ public class CoreProtectLogger {
         }
 
         var coreProtectPlugin = Bukkit.getPluginManager().getPlugin("CoreProtect");
-        if (!(coreProtectPlugin instanceof CoreProtect coreProtect)) {
+        if (coreProtectPlugin == null || !coreProtectPlugin.isEnabled()) {
             plugin.getLogger().info("CoreProtect not found — logging disabled");
             return;
         }
 
-        CoreProtectAPI api = coreProtect.getAPI();
+        // Resolve the API only after confirming the plugin is present. Referencing any
+        // net.coreprotect.* type (the cast below) is what triggers class resolution, so it
+        // must never be reached on servers without CoreProtect installed — otherwise the
+        // JVM throws NoClassDefFoundError and disables the whole plugin.
+        CoreProtectAPI api = ((CoreProtect) coreProtectPlugin).getAPI();
         if (api.isEnabled() && api.APIVersion() >= 9) {
             this.coreProtectAPI = api;
             this.available = true;
