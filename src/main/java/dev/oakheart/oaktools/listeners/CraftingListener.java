@@ -29,7 +29,11 @@ public class CraftingListener implements Listener {
             return;
         }
 
-        String permission = "oaktools.craft." + toolType.name().toLowerCase();
+        // Underscores stripped to match the declared nodes: paper-plugin.yml
+        // defines oaktools.craft.veinminer (like oaktools.use.veinminer), but
+        // VEIN_MINER.name() lowercases to vein_miner — an undefined node that
+        // silently defaults to op-only the day the recipe is enabled.
+        String permission = "oaktools.craft." + toolType.name().toLowerCase(java.util.Locale.ROOT).replace("_", "");
         if (!event.getWhoClicked().hasPermission(permission)) {
             event.setCancelled(true);
             if (event.getWhoClicked() instanceof Player player) {

@@ -110,7 +110,7 @@ public final class OakTools extends JavaPlugin {
         overflowHook.initialize();
 
         breakingAnimationManager = new BreakingAnimationManager(this, overflowHook);
-        placedBlockTracker = new PlacedBlockTracker();
+        placedBlockTracker = new PlacedBlockTracker(protectionService);
 
         coreProtectLogger = new CoreProtectLogger(this);
         coreProtectLogger.initialize();

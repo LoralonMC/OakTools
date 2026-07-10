@@ -41,7 +41,10 @@ public class RecipeDiscoveryListener implements Listener {
         Set<Material> allMaterials = EnumSet.noneOf(Material.class);
 
         for (ToolType toolType : ToolType.values()) {
-            String toolName = toolType.name().toLowerCase();
+            // Must match RecipeManager, which builds config paths and recipe keys
+            // from getConfigKey() ("vein-miner") — name().toLowerCase() gives
+            // "vein_miner", so that tool's recipe was never auto-discovered.
+            String toolName = toolType.getConfigKey();
 
             if (!plugin.getConfigManager().getConfig().getBoolean("tools." + toolName + ".recipe.enabled", true)) {
                 continue;

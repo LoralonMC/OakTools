@@ -3,6 +3,7 @@ package dev.oakheart.oaktools.listeners;
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.util.Constants;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.HumanEntity;
@@ -328,10 +329,43 @@ public class AnvilListener implements Listener {
         int itemsToRefund = second.getAmount() - itemsNeeded;
 
         if (itemsToRefund > 0) {
+            // Clicking the result slot does NOT mean the take succeeded: vanilla
+            // rejects it for insufficient XP levels, an occupied cursor, or a
+            // full inventory on shift-click — and this event still fires.
+            // Refunding unconditionally mints free repair material on every
+            // failed click. Precheck the predictable failures, then confirm
+            // next tick that the anvil actually consumed the inputs and (for
+            // survival players) charged the XP cost.
+            AnvilView view = (AnvilView) event.getView();
+            boolean creative = player.getGameMode() == GameMode.CREATIVE;
+            if (!creative && player.getLevel() < view.getRepairCost()) {
+                return;
+            }
+            if (!event.getCursor().isEmpty() && !event.getClick().isShiftClick()) {
+                return;
+            }
+
+            int levelBefore = player.getLevel();
+
             plugin.debug("[Anvil Debug] Refunding " + itemsToRefund + " x " + repairMaterial +
                 " (only needed " + itemsNeeded + " out of " + second.getAmount() + ")");
 
             plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (!isEmptySlot(anvil.getItem(0)) || !isEmptySlot(anvil.getItem(1))) {
+                    plugin.debug("[Anvil Debug] Refund skipped: anvil inputs not consumed (take failed)");
+                    return;
+                }
+                // Closing the anvil returns leftover inputs to the player, so a
+                // failed take followed by an instant close must not also refund.
+                if (player.getOpenInventory().getTopInventory() != anvil) {
+                    plugin.debug("[Anvil Debug] Refund skipped: anvil view no longer open");
+                    return;
+                }
+                if (!creative && player.getLevel() >= levelBefore) {
+                    plugin.debug("[Anvil Debug] Refund skipped: no XP cost charged (take failed)");
+                    return;
+                }
+
                 ItemStack refund = new ItemStack(repairMaterial, itemsToRefund);
                 player.getInventory().addItem(refund).forEach((index, leftover) -> {
                     player.getWorld().dropItem(player.getLocation(), leftover);
@@ -342,16 +376,32 @@ public class AnvilListener implements Listener {
         }
     }
 
+    private static boolean isEmptySlot(ItemStack item) {
+        return item == null || item.getType().isAir();
+    }
+
     private boolean hasAnvilRename(PrepareAnvilEvent event, ItemStack originalTool) {
         String renameText = ((AnvilView) event.getView()).getRenameText();
         if (renameText == null || renameText.isEmpty()) {
             return false;
         }
+        // OakTools items carry their styled name in itemName(), not customName().
+        // The client pre-fills the anvil text box with the displayed name, so
+        // comparing against customName() alone makes every ordinary repair look
+        // like a rename and silently replaces the styled name with plain text.
         ItemMeta meta = originalTool.getItemMeta();
-        if (meta == null || meta.customName() == null) {
+        Component currentName = null;
+        if (meta != null) {
+            if (meta.customName() != null) {
+                currentName = meta.customName();
+            } else if (meta.hasItemName()) {
+                currentName = meta.itemName();
+            }
+        }
+        if (currentName == null) {
             return !renameText.isEmpty();
         }
-        String currentPlainName = PlainTextComponentSerializer.plainText().serialize(meta.customName());
+        String currentPlainName = PlainTextComponentSerializer.plainText().serialize(currentName);
         return !renameText.equals(currentPlainName);
     }
 

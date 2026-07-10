@@ -37,6 +37,9 @@ public class LumberjackListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        // Protection probes fire fake BlockBreakEvents; reacting to one recurses.
+        if (plugin.getProtectionService().isFiringProbe()) return;
+
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
 

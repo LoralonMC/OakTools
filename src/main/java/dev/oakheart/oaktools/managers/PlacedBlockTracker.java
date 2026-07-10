@@ -24,7 +24,12 @@ public class PlacedBlockTracker implements Listener {
 
     private static final int MAX_TRACKED = 5000;
 
+    private final dev.oakheart.oaktools.services.ProtectionService protectionService;
     private final Set<Location> placedLogs = newCappedSet(MAX_TRACKED);
+
+    public PlacedBlockTracker(dev.oakheart.oaktools.services.ProtectionService protectionService) {
+        this.protectionService = protectionService;
+    }
 
     /**
      * Returns whether the block was placed by a player (and not yet broken or grown into a tree).
@@ -35,6 +40,9 @@ public class PlacedBlockTracker implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
+        // Protection probes fire fake place/break events for blocks that are
+        // never actually modified; tracking those corrupts the placed-log set.
+        if (protectionService.isFiringProbe()) return;
         if (Tag.LOGS.isTagged(event.getBlock().getType())) {
             placedLogs.add(event.getBlock().getLocation());
         }
@@ -42,6 +50,7 @@ public class PlacedBlockTracker implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        if (protectionService.isFiringProbe()) return;
         if (Tag.LOGS.isTagged(event.getBlock().getType())) {
             placedLogs.remove(event.getBlock().getLocation());
         }

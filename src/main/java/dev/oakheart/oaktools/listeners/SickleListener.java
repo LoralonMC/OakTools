@@ -56,6 +56,9 @@ public class SickleListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        // Protection probes fire fake BlockBreakEvents; reacting to one recurses.
+        if (plugin.getProtectionService().isFiringProbe()) return;
+
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
 
@@ -102,6 +105,11 @@ public class SickleListener implements Listener {
                 }
             }
         }
+
+        // The initial block already passed protection via the real break event;
+        // area blocks have not, and the radius can reach into someone else's claim.
+        crops.removeIf(b -> !b.equals(brokenBlock)
+                && !plugin.getProtectionService().canBreakBlock(player, b));
 
         int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
         int harvestedCount = 0;
@@ -156,6 +164,11 @@ public class SickleListener implements Listener {
                 }
             }
         }
+
+        // Same claim-protection filter as the crop path; the initial block was
+        // already checked by the real break event.
+        grassBlocks.removeIf(b -> !b.equals(brokenBlock)
+                && !plugin.getProtectionService().canBreakBlock(player, b));
 
         int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
         int clearedCount = 0;

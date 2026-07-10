@@ -186,9 +186,9 @@ public class WandPreviewManager implements Listener {
         boolean consumeBlocks = plugin.getConfigManager().shouldConsumeBlocks(player.getGameMode());
         if (consumeBlocks) {
             int available = InventoryUtil.countMaterial(player, consumeMaterial);
-            // Match the actual placement count: countMaterial covers only main storage
-            // (slots 0-35), so add the offhand override stack explicitly.
-            if (overrideItem != null) {
+            // Match the actual placement count: the override stack is outside
+            // main storage (slots 0-35) only when it sits in the offhand slot.
+            if (overrideItem != null && wandInfo.hand == EquipmentSlot.HAND) {
                 available += overrideItem.getAmount();
             }
             if (available == 0) {

@@ -302,13 +302,18 @@ public class WandListener implements Listener {
             return;
         }
 
+        // The override stack sits outside main storage (slots 0-35) only when it
+        // is in the actual offhand slot, i.e. the wand is in the main hand. With
+        // the wand in the offhand, the override is a hotbar stack that
+        // countMaterial already covers — adding it again double-counts and
+        // places blocks the player doesn't have.
+        boolean overrideInOffhand = overrideItem != null && hand == EquipmentSlot.HAND;
+
         // Check block consumption and limit to available blocks
         boolean consumeBlocks = plugin.getConfigManager().shouldConsumeBlocks(player.getGameMode());
         if (consumeBlocks) {
             int available = InventoryUtil.countMaterial(player, consumeMaterial);
-            // countMaterial only covers main storage (slots 0-35), so add the offhand
-            // override stack explicitly — otherwise it would be counted twice and dupe.
-            if (overrideItem != null) {
+            if (overrideInOffhand) {
                 available += overrideItem.getAmount();
             }
             if (available == 0) {
@@ -339,10 +344,12 @@ public class WandListener implements Listener {
             snapshots.add(new WandHistoryManager.BlockSnapshot(block.getLocation(), block.getBlockData().clone()));
         }
 
-        // Consume blocks from inventory (main inventory first, offhand last)
+        // Consume blocks from inventory (main inventory first, offhand last).
+        // Only reach into the offhand when the override actually lives there;
+        // a main-hand override was already drained by consumeBlocks.
         if (consumeBlocks) {
             int remaining = consumeBlocks(player, consumeMaterial, placements.size());
-            if (remaining > 0 && overrideItem != null) {
+            if (remaining > 0 && overrideInOffhand) {
                 consumeFromOffhand(player, hand, remaining);
             }
         }

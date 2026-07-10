@@ -36,6 +36,9 @@ public class ExcavatorListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        // Protection probes fire fake BlockBreakEvents; reacting to one recurses.
+        if (plugin.getProtectionService().isFiringProbe()) return;
+
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
 
@@ -59,15 +62,9 @@ public class ExcavatorListener implements Listener {
         Block brokenBlock = event.getBlock();
         if (!Tag.MINEABLE_SHOVEL.isTagged(brokenBlock.getType())) return;
 
-        // Suppress vanilla drops — we handle all drops via inventory
-        event.setDropItems(false);
-
-        // Handle the initial block's drops ourselves (direct to inventory)
-        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.EXCAVATOR);
-        Collection<ItemStack> initialDrops = brokenBlock.getDrops(fakeTool, player);
-        DropHandler.Result initialResult = DropHandler.distributeDrops(player, initialDrops);
-
-        // Ray trace to find which face was hit (for 3x3 grid orientation)
+        // Ray trace to find which face was hit (for 3x3 grid orientation).
+        // Runs before any drop handling so a failed trace leaves the vanilla
+        // break untouched instead of suppressing drops it never redistributes.
         RayTraceResult rayTrace = player.rayTraceBlocks(5.0);
         if (rayTrace == null || rayTrace.getHitBlock() == null || rayTrace.getHitBlockFace() == null) return;
 
@@ -80,8 +77,17 @@ public class ExcavatorListener implements Listener {
         // Remove the already-broken block from the list (vanilla handles the break itself)
         blocks.removeIf(b -> b.equals(brokenBlock));
 
-        // Filter by protection
+        // Filter by protection. Must happen before any drops are distributed —
+        // the probe events this fires must not find drops already handed out.
         blocks.removeIf(b -> !plugin.getProtectionService().canBreakBlock(player, b));
+
+        // Suppress vanilla drops — we handle all drops via inventory
+        event.setDropItems(false);
+
+        // Handle the initial block's drops ourselves (direct to inventory)
+        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.EXCAVATOR);
+        Collection<ItemStack> initialDrops = brokenBlock.getDrops(fakeTool, player);
+        DropHandler.Result initialResult = DropHandler.distributeDrops(player, initialDrops);
 
         if (blocks.isEmpty()) {
             // No surrounding blocks — handle any initial overflow

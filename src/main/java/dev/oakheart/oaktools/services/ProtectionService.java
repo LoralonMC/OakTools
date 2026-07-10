@@ -15,8 +15,18 @@ public class ProtectionService {
 
     private final OakTools plugin;
 
+    // True while a fake probe event is being dispatched. OakTools' own block
+    // listeners must skip probe events: reacting to one re-enters the listener,
+    // which recurses until StackOverflowError (and hands out real drops for
+    // blocks that were never broken). Main-thread only.
+    private boolean firingProbe = false;
+
     public ProtectionService(OakTools plugin) {
         this.plugin = plugin;
+    }
+
+    public boolean isFiringProbe() {
+        return firingProbe;
     }
 
     public boolean canModifyBlock(Player player, Block block, EquipmentSlot hand, ItemStack tool) {
@@ -41,7 +51,12 @@ public class ProtectionService {
 
         plugin.debug("[Protection Debug] Firing fake BlockPlaceEvent...");
 
-        plugin.getServer().getPluginManager().callEvent(fakeEvent);
+        firingProbe = true;
+        try {
+            plugin.getServer().getPluginManager().callEvent(fakeEvent);
+        } finally {
+            firingProbe = false;
+        }
 
         boolean result = !fakeEvent.isCancelled();
 
@@ -60,7 +75,12 @@ public class ProtectionService {
         }
 
         BlockBreakEvent fakeEvent = new BlockBreakEvent(block, player);
-        plugin.getServer().getPluginManager().callEvent(fakeEvent);
+        firingProbe = true;
+        try {
+            plugin.getServer().getPluginManager().callEvent(fakeEvent);
+        } finally {
+            firingProbe = false;
+        }
         return !fakeEvent.isCancelled();
     }
 }
