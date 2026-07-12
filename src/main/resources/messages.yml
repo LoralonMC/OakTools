@@ -90,6 +90,12 @@ sickle-harvested:
 sickle-no-crops:
   text: "<#D89B6A>No mature crops nearby."
   display: action_bar
+sickle-immature:
+  text: "<#D89B6A>This crop isn't fully grown yet."
+  display: action_bar
+sickle-no-till:
+  text: "<#D89B6A>Sickles can't till soil."
+  display: action_bar
 
 # ============================================================
 # COMMAND MESSAGES

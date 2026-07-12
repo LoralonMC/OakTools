@@ -7,10 +7,13 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -19,9 +22,11 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -45,6 +50,12 @@ public class SickleListener implements Listener {
             Material.SWEET_BERRY_BUSH, Material.SWEET_BERRIES,
             Material.TORCHFLOWER_CROP, Material.TORCHFLOWER_SEEDS,
             Material.PITCHER_CROP, Material.PITCHER_POD
+    );
+
+    /** Blocks a vanilla hoe converts on right-click; the sickle refuses to till these. */
+    private static final Set<Material> TILLABLE = EnumSet.of(
+            Material.DIRT, Material.GRASS_BLOCK, Material.DIRT_PATH,
+            Material.COARSE_DIRT, Material.ROOTED_DIRT
     );
 
 
@@ -74,11 +85,38 @@ public class SickleListener implements Listener {
 
         if (plugin.getConfigManager().getSickleClearableVegetation().contains(brokenBlock.getType())) {
             handleGrassClearing(event, player, item, brokenBlock);
-        } else if (brokenBlock.getBlockData() instanceof Ageable ageable
-                && ageable.getAge() >= ageable.getMaximumAge()
-                && SEED_MAP.containsKey(brokenBlock.getType())) {
-            handleCropHarvest(event, player, item, brokenBlock);
+        } else if (SEED_MAP.containsKey(brokenBlock.getType())
+                && brokenBlock.getBlockData() instanceof Ageable ageable) {
+            if (ageable.getAge() >= ageable.getMaximumAge()) {
+                handleCropHarvest(event, player, item, brokenBlock);
+            } else if (plugin.getConfigManager().isSickleProtectImmatureCrops()) {
+                // Harvest-only: the sickle never destroys a growing crop.
+                event.setCancelled(true);
+                plugin.getMessageManager().send(player, "sickle-immature");
+            }
         }
+    }
+
+    /**
+     * Blocks tilling with the sickle. It shares the hoe item type, but a sickle
+     * is a harvesting tool — denying use-item still lets an offhand item
+     * (e.g. seeds) interact with the block normally.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onSickleTill(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (!plugin.getConfigManager().isSickleEnabled()) return;
+        if (!plugin.getConfigManager().isSicklePreventTilling()) return;
+
+        Block clicked = event.getClickedBlock();
+        if (clicked == null || !TILLABLE.contains(clicked.getType())) return;
+
+        ItemStack item = event.getItem();
+        if (item == null || !plugin.getItemFactory().isTool(item)) return;
+        if (plugin.getItemFactory().getToolType(item) != ToolType.SICKLE) return;
+
+        event.setUseItemInHand(Event.Result.DENY);
+        plugin.getMessageManager().send(event.getPlayer(), "sickle-no-till");
     }
 
     // ===== Crop harvesting =====
@@ -118,6 +156,13 @@ public class SickleListener implements Listener {
             Material seedMaterial = SEED_MAP.get(crop.getType());
             Collection<ItemStack> drops = crop.getDrops(item, player);
             boolean seedConsumed = removeSeed(drops, seedMaterial);
+
+            // Wheat and beetroot can roll zero seeds (~8% without Fortune) —
+            // fall back to a seed from the player's inventory so replanting
+            // stays consistent without creating seeds from nothing.
+            if (!seedConsumed && plugin.getConfigManager().isSickleReplantFromInventory()) {
+                seedConsumed = takeSeedFromInventory(player, seedMaterial);
+            }
 
             plugin.getCoreProtectLogger().logHarvestingBreak(player, crop, crop.getBlockData());
 
@@ -237,6 +282,15 @@ public class SickleListener implements Listener {
             }
         }
         return false;
+    }
+
+    /**
+     * Removes one seed of the given material from the player's inventory
+     * (storage slots only). Returns true if a seed was consumed. Matches by
+     * item similarity, so renamed/enchanted seed stacks are never taken.
+     */
+    private boolean takeSeedFromInventory(Player player, Material seedMaterial) {
+        return player.getInventory().removeItem(new ItemStack(seedMaterial)).isEmpty();
     }
 
     /**

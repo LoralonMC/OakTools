@@ -541,6 +541,16 @@ tools:
   # Uses vanilla durability, enchanting, repair — fully craftable.
   sickle:
     enabled: true
+    # Take a replant seed from the player's inventory when the harvest drops
+    # none (wheat and beetroot can roll zero seeds). Only plain seed items are
+    # consumed — renamed or enchanted stacks are left alone.
+    replant-from-inventory: true
+    # Prevent the sickle from tilling dirt/grass into farmland (it shares the
+    # hoe item type, but a sickle is a harvesting tool, not a hoe)
+    prevent-tilling: true
+    # Prevent the sickle from breaking crops that aren't fully grown.
+    # Immature crops can still be removed by hand or with any other tool.
+    protect-immature-crops: true
     # Vegetation types the sickle clears in an area (non-crop blocks)
     clearable-vegetation:
       - SHORT_GRASS

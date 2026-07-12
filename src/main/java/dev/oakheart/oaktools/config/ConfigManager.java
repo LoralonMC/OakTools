@@ -91,6 +91,9 @@ public class ConfigManager {
 
     // Sickle settings
     private boolean cachedSickleEnabled = true;
+    private boolean cachedSickleReplantFromInventory = true;
+    private boolean cachedSicklePreventTilling = true;
+    private boolean cachedSickleProtectImmatureCrops = true;
     private Map<String, Integer> cachedSickleRadius = new HashMap<>();
     private Map<String, Material> cachedSickleBaseMaterial = new HashMap<>();
     private Map<String, String> cachedSickleDisplayName = new HashMap<>();
@@ -144,7 +147,7 @@ public class ConfigManager {
             throw new RuntimeException("Failed to load config.yml", e);
         }
 
-        mergeDefaults();
+        evolveConfig();
 
         if (!ConfigValidator.validate(config, logger)) {
             logger.warning("Configuration has fatal errors — some features may not work correctly.");
@@ -161,7 +164,7 @@ public class ConfigManager {
             return false;
         }
 
-        mergeDefaults();
+        evolveConfig();
 
         if (!ConfigValidator.validate(config, logger)) {
             logger.warning("Config validation failed. Keeping old cached values.");
@@ -173,18 +176,24 @@ public class ConfigManager {
         return true;
     }
 
-    private void mergeDefaults() {
+    private void evolveConfig() {
         try (var stream = plugin.getResource("config.yml")) {
             if (stream == null) {
                 logger.warning("Could not load default config from JAR");
                 return;
             }
             var defaults = dev.oakheart.config.ConfigManager.fromStream(stream);
-            if (config.mergeDefaults(defaults)) {
+            // Additive: insert missing keys at the right position with their comments.
+            boolean merged = config.mergeDefaults(defaults);
+            // Documentation: 3-way sync of changed comments onto existing keys, never
+            // clobbering admin-customized comments (seeds baseline on first run).
+            boolean synced = config.syncComments(defaults,
+                    configFile.getParent().resolve(".oakheart/config-baseline.yml"));
+            if (merged || synced) {
                 config.save();
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to merge default config", e);
+            logger.log(Level.WARNING, "Failed to evolve config", e);
         }
     }
 
@@ -284,6 +293,9 @@ public class ConfigManager {
 
         // Sickle tiers
         cachedSickleEnabled = config.getBoolean("tools.sickle.enabled", true);
+        cachedSickleReplantFromInventory = config.getBoolean("tools.sickle.replant-from-inventory", true);
+        cachedSicklePreventTilling = config.getBoolean("tools.sickle.prevent-tilling", true);
+        cachedSickleProtectImmatureCrops = config.getBoolean("tools.sickle.protect-immature-crops", true);
         Map<String, Integer> sickleRadii = new HashMap<>();
         Map<String, Material> sickleMats = new HashMap<>();
         Map<String, String> sickleNames = new HashMap<>();
@@ -714,6 +726,18 @@ public class ConfigManager {
 
     public boolean isSickleEnabled() {
         return cachedSickleEnabled;
+    }
+
+    public boolean isSickleReplantFromInventory() {
+        return cachedSickleReplantFromInventory;
+    }
+
+    public boolean isSicklePreventTilling() {
+        return cachedSicklePreventTilling;
+    }
+
+    public boolean isSickleProtectImmatureCrops() {
+        return cachedSickleProtectImmatureCrops;
     }
 
     public Set<String> getSickleTiers() {

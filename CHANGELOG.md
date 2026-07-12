@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vein Miner Pickaxe harvesting tool — mines connected ore veins with deepslate variant grouping
 - Lumberjack's Axe harvesting tool — chops entire generated trees with natural leaf validation and player-placed log detection
 - PlacedBlockTracker to distinguish player-placed logs from generated trees (in-memory, same pattern as UltimateTimber)
-- Sickle tool — tiered crop harvesting with auto-replant (wooden through netherite, vanilla durability/enchanting/repair)
+- Sickle tool — tiered crop harvesting with auto-replant (wooden through netherite, vanilla durability/enchanting/repair). Replanting consumes a seed from the harvest drops, falling back to the player's inventory when the harvest rolls none; the sickle can't till soil into farmland and won't break immature crops (each behavior configurable under `tools.sickle`)
 - Enchanting table blocked for "locked" tools (tools with empty allowed-enchantments)
 - Per-tool `unbreakable` config option for infinite durability
 - File tool now protects extended (powered) pistons from rotation by default, preventing piston head desync and block-duplication glitches. Configurable via `tools.file.protect-extended-pistons` (retracted pistons remain editable)
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Migrate to OakheartLib shared library (oakheart-core for config/messages/commands, oakheart-models for model providers)
+- Migrate to OakheartLib shared library (oakheart-core for config/messages/commands, oakheart-models for model providers; now 1.3.0 — comment changes in the default config are synced onto existing config files without touching admin-customized comments)
 - Messages moved from config.yml to standalone messages.yml (auto-migrated on first load)
 - Replace Bukkit FileConfiguration with OakheartLib ConfigManager (format-preserving YAML)
 - Replace local ModelProviderManager with shared oakheart-models library
