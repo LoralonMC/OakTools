@@ -157,9 +157,10 @@ public class SickleListener implements Listener {
             Collection<ItemStack> drops = crop.getDrops(item, player);
             boolean seedConsumed = removeSeed(drops, seedMaterial);
 
-            // Wheat and beetroot can roll zero seeds (~8% without Fortune) —
-            // fall back to a seed from the player's inventory so replanting
-            // stays consistent without creating seeds from nothing.
+            // Vanilla mature crops always include their replant item in the
+            // drops except pitcher crops (they drop the plant, not a pod) —
+            // fall back to a seed from the player's inventory rather than
+            // replanting for free. Also covers datapack-modified drop tables.
             if (!seedConsumed && plugin.getConfigManager().isSickleReplantFromInventory()) {
                 seedConsumed = takeSeedFromInventory(player, seedMaterial);
             }

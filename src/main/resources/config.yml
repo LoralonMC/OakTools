@@ -542,8 +542,9 @@ tools:
   sickle:
     enabled: true
     # Take a replant seed from the player's inventory when the harvest drops
-    # none (wheat and beetroot can roll zero seeds). Only plain seed items are
-    # consumed — renamed or enchanted stacks are left alone.
+    # none. In vanilla this only happens for pitcher crops (a mature one drops
+    # the plant, not a pod); datapacks can change other crops' drops. Only
+    # plain seed items are consumed — renamed or enchanted stacks are left alone.
     replant-from-inventory: true
     # Prevent the sickle from tilling dirt/grass into farmland (it shares the
     # hoe item type, but a sickle is a harvesting tool, not a hoe)
