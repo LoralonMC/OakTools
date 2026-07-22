@@ -85,7 +85,7 @@ public class ExcavatorListener implements Listener {
         event.setDropItems(false);
 
         // Handle the initial block's drops ourselves (direct to inventory)
-        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.EXCAVATOR);
+        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.EXCAVATOR, item);
         Collection<ItemStack> initialDrops = brokenBlock.getDrops(fakeTool, player);
         DropHandler.Result initialResult = DropHandler.distributeDrops(player, initialDrops);
 

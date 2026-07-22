@@ -2,6 +2,7 @@ package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
 import dev.oakheart.oaktools.model.ToolType;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -154,6 +155,7 @@ public class SickleListener implements Listener {
 
         for (Block crop : crops) {
             Material seedMaterial = SEED_MAP.get(crop.getType());
+            Material cropType = crop.getType();
             Collection<ItemStack> drops = crop.getDrops(item, player);
             boolean seedConsumed = removeSeed(drops, seedMaterial);
 
@@ -180,6 +182,15 @@ public class SickleListener implements Listener {
             }
 
             harvestedCount++;
+
+            // Announce radius crops so downstream systems (quest objectives) can
+            // credit them. The clicked crop is skipped - its pre-cancel
+            // BlockBreakEvent already accounts for it, so firing here too would
+            // double count.
+            if (!crop.equals(brokenBlock)) {
+                Bukkit.getPluginManager().callEvent(
+                        new dev.oakheart.oaktools.events.SickleHarvestEvent(player, crop, cropType));
+            }
 
             if (damageToolAndCheckBreak(item, player, unbreakingLevel)) break;
         }

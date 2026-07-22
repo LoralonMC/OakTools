@@ -83,7 +83,7 @@ public class LumberjackListener implements Listener {
         event.setDropItems(false);
 
         // Handle the initial block's drops ourselves (direct to inventory)
-        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.LUMBERJACK);
+        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.LUMBERJACK, item);
         Collection<ItemStack> initialDrops = brokenBlock.getDrops(fakeTool, player);
         DropHandler.Result initialResult = DropHandler.distributeDrops(player, initialDrops);
 

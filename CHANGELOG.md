@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-07-22
+
+### Added
+
+- `OakToolBlockBreakEvent` fired once per extra block cleared by a multi-block operation (Lumberjack fell, Vein Miner, Excavator) from `BreakingAnimationManager`. Those cascade blocks are broken directly and fire no `BlockBreakEvent`, so downstream systems (quest objectives) can now credit a whole tree/vein/dig instead of just the clicked block. The initially clicked block is not re-announced (its own `BlockBreakEvent` already accounts for it).
+
+## [2.1.0] - 2026-07-21
+
+### Added
+
+- `SickleHarvestEvent` fired per radius crop the Sickle clears (which otherwise fire no BlockBreakEvent), so downstream systems (quest objectives) can credit a full sickle sweep. The clicked crop is not re-announced (its pre-cancel BlockBreakEvent already accounts for it).
+
 ### Fixed
 
 - Plugin failing to enable on servers without CoreProtect installed — the CoreProtect integration referenced a CoreProtect class during initialization regardless of whether the (soft-dependency) plugin was present, throwing `NoClassDefFoundError` and disabling all of OakTools. The API is now resolved only after confirming CoreProtect is loaded

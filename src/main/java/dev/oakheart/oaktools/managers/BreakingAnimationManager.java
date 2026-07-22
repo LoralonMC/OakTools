@@ -3,6 +3,7 @@ package dev.oakheart.oaktools.managers;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockBreakAnimation;
 import dev.oakheart.oaktools.OakTools;
+import dev.oakheart.oaktools.events.OakToolBlockBreakEvent;
 import dev.oakheart.oaktools.integration.OverflowHook;
 import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.util.Constants;
@@ -20,6 +21,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -133,7 +136,9 @@ public class BreakingAnimationManager implements Listener {
 
             Player player = Bukkit.getPlayer(playerId);
 
-            // Cancel if player offline or dead
+            // Backstop only — death/quit events flush overflow while the player
+            // is still usable; anything reaching this branch has no player to
+            // flush to.
             if (player == null || player.isDead()) {
                 clearCrackAnimation(op);
                 unfreezeBlocks(op);
@@ -196,14 +201,22 @@ public class BreakingAnimationManager implements Listener {
             // Unfreeze this block before breaking (allow physics to resume for it)
             frozenBlocks.remove(block.getLocation());
 
-            // Break block and distribute drops to inventory
-            DropHandler.Result result = DropHandler.handleBlockBreak(player, block, op.toolType);
+            // Break block and distribute drops to inventory. The main-hand item
+            // is the operation's tool — isHoldingToolType verified it above.
+            DropHandler.Result result = DropHandler.handleBlockBreak(player, block, op.toolType,
+                    player.getInventory().getItemInMainHand());
             op.accumulatedOverflow.addAll(result.overflowItems());
 
             // Play break particles and sound
             playBreakEffects(block, blockData);
 
             op.brokenCount++;
+
+            // Announce the cascade break: it fired no BlockBreakEvent (we cleared
+            // it directly above), so without this a whole tree/vein/dig counts as
+            // one block to any listener - quest objectives especially.
+            Bukkit.getPluginManager().callEvent(
+                    new OakToolBlockBreakEvent(player, block, blockData.getMaterial(), op.toolType));
 
             // Damage tool (if not unbreakable)
             if (!plugin.getConfigManager().isUnbreakable(op.toolType)) {
@@ -318,6 +331,38 @@ public class BreakingAnimationManager implements Listener {
     private void unfreezeBlocks(BreakingOperation op) {
         for (Block block : op.blocks) {
             frozenBlocks.remove(block.getLocation());
+        }
+    }
+
+    /**
+     * Flush accumulated overflow before the player's death drops resolve.
+     * Without this, items that didn't fit the inventory mid-operation are
+     * silently discarded on death. With OakOverflow the items go to storage
+     * (surviving the death); otherwise they drop at the death location
+     * alongside the regular death drops.
+     */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        BreakingOperation op = activeOperations.remove(event.getEntity().getUniqueId());
+        if (op != null) {
+            clearCrackAnimation(op);
+            unfreezeBlocks(op);
+            flushOverflow(event.getEntity(), op);
+        }
+    }
+
+    /**
+     * Flush accumulated overflow while the quitting player object is still
+     * valid — the tick loop only sees the player as offline after the fact,
+     * when there is no one left to give the items to.
+     */
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        BreakingOperation op = activeOperations.remove(event.getPlayer().getUniqueId());
+        if (op != null) {
+            clearCrackAnimation(op);
+            unfreezeBlocks(op);
+            flushOverflow(event.getPlayer(), op);
         }
     }
 

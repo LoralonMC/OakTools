@@ -2,7 +2,9 @@ package dev.oakheart.oaktools.util;
 
 import dev.oakheart.oaktools.managers.PlacedBlockTracker;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Leaves;
 
 import java.util.ArrayList;
@@ -10,13 +12,17 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 
 /**
  * Detects natural trees by finding connected logs and validating nearby natural leaves.
- * Uses upward-only BFS (trees grow up), same-material matching, placed-block filtering,
- * and a minimum natural leaf count to distinguish generated trees from player structures.
+ * Expands nearest-tree-first (horizontal distance from the start trunk, then height) so
+ * connected walls of trees are completed one tree at a time, uses same-material matching,
+ * placed-block filtering, and a minimum natural leaf count to distinguish generated trees
+ * from player structures. Logs whose removal would orphan an out-of-cap treetop are
+ * trimmed from the result so boundary trees are left standing whole.
  */
 public class TreeDetector {
 
@@ -42,10 +48,20 @@ public class TreeDetector {
             return List.of();
         }
 
-        // BFS upward and laterally (not downward) to find connected logs
+        // Nearest-tree-first expansion: pop by horizontal distance from the
+        // start trunk, then by height. Plain FIFO order spreads sideways into
+        // neighbouring trunks (walls of trees) before finishing the canopy of
+        // the tree that was hit, so the block cap orphaned every treetop
+        // instead of completing trees one at a time.
+        final int startX = startBlock.getX();
+        final int startZ = startBlock.getZ();
+        Comparator<Block> nearestFirst = Comparator
+                .comparingInt((Block b) -> Math.max(Math.abs(b.getX() - startX), Math.abs(b.getZ() - startZ)))
+                .thenComparingInt(Block::getY);
+
         List<Block> logs = new ArrayList<>();
         Set<Block> visited = new HashSet<>();
-        Queue<Block> queue = new LinkedList<>();
+        Queue<Block> queue = new PriorityQueue<>(nearestFirst);
 
         queue.add(startBlock);
         visited.add(startBlock);
@@ -82,10 +98,118 @@ public class TreeDetector {
             return List.of();
         }
 
-        // Sort bottom-to-top for natural visual breaking order
-        logs.sort(Comparator.comparingInt(Block::getY));
+        trimFloatingTops(logs, startBlock, logType, tracker);
+
+        // Nearest tree first, bottom-to-top within it, so each tree finishes
+        // before the breaking animation moves to the next.
+        logs.sort(nearestFirst);
 
         return logs;
+    }
+
+    /** Max blocks flooded when checking whether a left-behind log has its own
+     *  support path; anything larger is assumed attached to a real structure. */
+    private static final int SUPPORT_SEARCH_LIMIT = 256;
+
+    /**
+     * Removes logs from the break list whose removal would orphan a natural
+     * log the block cap left out (a trunk cut short mid-air). Cascades
+     * downward, so a boundary tree that doesn't fully fit the cap is left
+     * standing whole instead of having its top float. Player-placed logs
+     * above don't count — those are the placer's artifact, not a treetop.
+     * The start block is never trimmed (vanilla breaks it regardless).
+     */
+    private static void trimFloatingTops(List<Block> logs, Block startBlock, Material logType,
+                                         PlacedBlockTracker tracker) {
+        Set<Block> breaking = new HashSet<>(logs);
+        breaking.add(startBlock);
+        Set<Block> knownSupported = new HashSet<>();
+
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Block log : logs) {
+                if (wouldOrphanNeighbor(log, logType, breaking, knownSupported, tracker)) {
+                    // Leave this log standing so the log above keeps support.
+                    logs.remove(log);
+                    breaking.remove(log);
+                    changed = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Whether breaking this log would leave an undetected natural log beside
+     * or above it with no support path of its own. Same-level neighbours are
+     * included because big-oak branches extend horizontally from the trunk.
+     */
+    private static boolean wouldOrphanNeighbor(Block log, Material logType, Set<Block> breaking,
+                                          Set<Block> knownSupported, PlacedBlockTracker tracker) {
+        for (int dy = 0; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dy == 0 && dx == 0 && dz == 0) continue;
+                    Block neighbor = log.getRelative(dx, dy, dz);
+                    if (neighbor.getType() != logType) continue;
+                    if (breaking.contains(neighbor)) continue;
+                    if (tracker != null && tracker.isPlayerPlaced(neighbor)) continue;
+                    if (hasOwnSupport(neighbor, logType, breaking, knownSupported)) continue;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether a log that stays in the world keeps a support path that doesn't
+     * run through blocks scheduled for breaking: flood through its connected
+     * unbroken same-type logs looking for one resting on an unbroken solid
+     * block (leaves don't count — they decay). A neighbouring standing tree
+     * passes via its own trunk; a treetop whose only trunk is being felled
+     * does not.
+     */
+    private static boolean hasOwnSupport(Block start, Material logType, Set<Block> breaking,
+                                         Set<Block> knownSupported) {
+        if (knownSupported.contains(start)) {
+            return true;
+        }
+
+        Set<Block> component = new HashSet<>();
+        Queue<Block> queue = new LinkedList<>();
+        queue.add(start);
+        component.add(start);
+
+        while (!queue.isEmpty()) {
+            Block current = queue.poll();
+
+            // An unbroken same-type log below is part of this component (its
+            // own support gets checked when the flood reaches it), not ground.
+            Block below = current.getRelative(BlockFace.DOWN);
+            boolean belowIsComponentLog = below.getType() == logType && !breaking.contains(below);
+            if (!belowIsComponentLog && !breaking.contains(below) && below.getType().isSolid()
+                    && !Tag.LEAVES.isTagged(below.getType())) {
+                knownSupported.addAll(component);
+                return true;
+            }
+
+            if (component.size() >= SUPPORT_SEARCH_LIMIT) {
+                knownSupported.addAll(component);
+                return true;
+            }
+
+            for (Block neighbor : getTreeNeighbors(current)) {
+                if (component.contains(neighbor)) continue;
+                if (neighbor.getType() != logType) continue;
+                if (breaking.contains(neighbor)) continue;
+                component.add(neighbor);
+                queue.add(neighbor);
+            }
+        }
+
+        return false;
     }
 
     /**

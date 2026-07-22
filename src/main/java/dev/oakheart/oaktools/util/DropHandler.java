@@ -28,8 +28,8 @@ public class DropHandler {
      * Calculates drops, breaks the block, and adds items to the player's inventory.
      * Items that don't fit are returned as overflow (caller handles batching/sending).
      */
-    public static Result handleBlockBreak(Player player, Block block, ToolType toolType) {
-        ItemStack fakeTool = getFakeTool(toolType);
+    public static Result handleBlockBreak(Player player, Block block, ToolType toolType, ItemStack actualTool) {
+        ItemStack fakeTool = getFakeTool(toolType, actualTool);
 
         // Calculate drops before breaking the block
         Collection<ItemStack> drops = block.getDrops(fakeTool, player);
@@ -101,6 +101,21 @@ public class DropHandler {
             case VEIN_MINER -> FAKE_PICKAXE;
             default -> FAKE_PICKAXE;
         };
+    }
+
+    /**
+     * Fake tool carrying the real tool's enchantments, so drop-affecting
+     * enchants (Fortune, Silk Touch — obtainable only when the tool's
+     * allowed-enchantments permits them) apply to drop calculation.
+     */
+    public static ItemStack getFakeTool(ToolType toolType, ItemStack actualTool) {
+        ItemStack fakeTool = getFakeTool(toolType);
+        if (actualTool == null || actualTool.getEnchantments().isEmpty()) {
+            return fakeTool;
+        }
+        ItemStack enchanted = fakeTool.clone();
+        enchanted.addUnsafeEnchantments(actualTool.getEnchantments());
+        return enchanted;
     }
 
     public record Result(int itemCount, List<ItemStack> overflowItems) {}

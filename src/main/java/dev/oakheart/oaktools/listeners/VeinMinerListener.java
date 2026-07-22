@@ -73,7 +73,7 @@ public class VeinMinerListener implements Listener {
         event.setDropItems(false);
 
         // Handle the initial block's drops ourselves (direct to inventory)
-        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.VEIN_MINER);
+        ItemStack fakeTool = DropHandler.getFakeTool(ToolType.VEIN_MINER, item);
         Collection<ItemStack> initialDrops = brokenBlock.getDrops(fakeTool, player);
         DropHandler.Result initialResult = DropHandler.distributeDrops(player, initialDrops);
 

@@ -149,6 +149,36 @@ public class TrowelListener implements Listener {
         }
     }
 
+    /**
+     * Same double-fire as the wand (see WandListener#onOffhandUseWithWand):
+     * cancelling the trowel's main-hand event doesn't stop the client's
+     * separate offhand attempt, so vanilla would place the offhand block on
+     * top of the trowel's own placement. The trowel owns the click whenever
+     * it's in the main hand, so swallow the offhand use entirely.
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onOffhandUseWithTrowel(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.OFF_HAND) {
+            return;
+        }
+
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        ItemStack mainHand = event.getPlayer().getInventory().getItemInMainHand();
+        if (!plugin.getItemFactory().isTool(mainHand)
+                || plugin.getItemFactory().getToolType(mainHand) != ToolType.TROWEL) {
+            return;
+        }
+
+        if (!plugin.getConfigManager().isTrowelEnabled()) {
+            return;
+        }
+
+        event.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onTrowelEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();

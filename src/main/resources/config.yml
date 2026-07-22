@@ -493,7 +493,9 @@ tools:
       ingredients:
         D: DIAMOND
         S: STICK
-    max-blocks: 64
+    # Must fit the largest single natural tree (mega jungle/spruce ~120 logs):
+    # trees larger than the cap are left standing whole rather than half-felled.
+    max-blocks: 160
     break-speed-ticks: 1
     # Show progress/completion action bar messages
     show-progress: true
@@ -516,7 +518,13 @@ tools:
       repair-material: NONE
       repair-amount: 0
       unbreakable: false
-    allowed-enchantments: []
+    # Applied via enchanted books on the anvil (the enchanting table is blocked
+    # for OakTools tools). Fortune/Silk Touch affect drops like a vanilla pickaxe.
+    # Deliberately no UNBREAKING/MENDING: the tool ships with a set durability
+    # so it has a fixed number of uses.
+    allowed-enchantments:
+      - SILK_TOUCH
+      - FORTUNE
     recipe:
       enabled: false
       category: EQUIPMENT

@@ -11,8 +11,11 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Set;
 
 /**
- * Blocks enchanting table interaction for tools with empty allowed-enchantments.
- * This prevents "locked" tools (harvesting tools) from being placed in the enchanting table.
+ * Blocks the enchanting table for all OakTools tools (except sickles, which
+ * are vanilla items). The table rolls arbitrary enchants for the base material
+ * and cannot be filtered per-enchant, so it would bypass a tool's
+ * allowed-enchantments list. Allowed enchants are applied via enchanted books
+ * on the anvil instead — AnvilListener filters those results.
  */
 public class EnchantBlockListener implements Listener {
 
@@ -33,9 +36,6 @@ public class EnchantBlockListener implements Listener {
         // Sickles use vanilla enchanting — don't block
         if (toolType == ToolType.SICKLE) return;
 
-        Set<Enchantment> allowed = plugin.getConfigManager().getAllowedEnchantments(toolType);
-        if (allowed.isEmpty()) {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true);
     }
 }

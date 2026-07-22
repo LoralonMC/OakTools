@@ -7,6 +7,7 @@ import dev.oakheart.oaktools.model.ToolType;
 import dev.oakheart.oaktools.model.WandMode;
 import dev.oakheart.oaktools.util.Constants;
 import dev.oakheart.oaktools.util.InventoryUtil;
+import dev.oakheart.oaktools.util.PlacementUtil;
 import dev.oakheart.oaktools.util.SoundUtil;
 import dev.oakheart.oaktools.util.WandPlacementCalculator;
 import net.kyori.adventure.key.Key;
@@ -15,6 +16,8 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Waterlogged;
+import org.bukkit.block.data.type.Slab;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -195,6 +198,37 @@ public class WandListener implements Listener {
         }
     }
 
+    /**
+     * After a main-hand wand click, the client independently tries the offhand
+     * item, which arrives as a separate OFF_HAND interact event carrying that
+     * item — cancelling the wand's own event doesn't stop it. Vanilla would
+     * then place the offhand block on top of the wand's placement (e.g. a slab
+     * merging the wand's slab into a double slab). The wand owns the click
+     * whenever it's in the main hand, so swallow the offhand use entirely.
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onOffhandUseWithWand(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.OFF_HAND) {
+            return;
+        }
+
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        ItemStack mainHand = event.getPlayer().getInventory().getItemInMainHand();
+        if (!plugin.getItemFactory().isTool(mainHand)
+                || plugin.getItemFactory().getToolType(mainHand) != ToolType.WAND) {
+            return;
+        }
+
+        if (!plugin.getConfigManager().isWandEnabled()) {
+            return;
+        }
+
+        event.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onWandEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
@@ -285,6 +319,22 @@ public class WandListener implements Listener {
             placeMaterial = overrideItem.getType();
             placeData = placeMaterial.createBlockData();
             consumeMaterial = placeMaterial;
+
+            // Orient the override like a vanilla placement: slab/stair half from
+            // click height, facing from the player. Without this, slabs always
+            // place as the default bottom half regardless of where the face was
+            // clicked.
+            if (event.getInteractionPoint() != null) {
+                placeData = PlacementUtil.applyPlacementLogic(
+                        placeData, clickedFace, event.getInteractionPoint().toVector(), player);
+            }
+        }
+
+        // A double slab is one Material but two slab items — copying its data
+        // verbatim charges 1 slab per placed block that mines back into 2.
+        // Extend double slabs as their single bottom form instead.
+        if (placeData instanceof Slab slabData && slabData.getType() == Slab.Type.DOUBLE) {
+            slabData.setType(Slab.Type.BOTTOM);
         }
 
         // BFS uses sourceMaterial to find connected surface; placements use placeMaterial
@@ -362,8 +412,15 @@ public class WandListener implements Listener {
 
         // Place all blocks
         for (Block block : placements) {
-            block.setBlockData(placeData.clone(), true);
-            plugin.getCoreProtectLogger().logWandPlacement(player, block, placeData);
+            BlockData data = placeData.clone();
+            // Copying a waterlogged source verbatim would spray water sources
+            // everywhere (left behind when the block breaks). Match vanilla:
+            // waterlogged only when the block is placed into water.
+            if (data instanceof Waterlogged waterlogged) {
+                waterlogged.setWaterlogged(block.getType() == Material.WATER);
+            }
+            block.setBlockData(data, true);
+            plugin.getCoreProtectLogger().logWandPlacement(player, block, data);
         }
 
         // Record operation for undo
