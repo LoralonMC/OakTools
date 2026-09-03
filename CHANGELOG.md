@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-08-01
+
+### Fixed
+
+- The 2.2.1 Vulcan integration not actually suppressing anything, so the Builder's Wand still got players kicked for Fast Place. Vulcan's `Check#getName()` returns the check name lowercased with spaces stripped (`fastplace`), not the `@CheckInfo` spelling (`Fast Place`) the filter compared against, so no flag ever matched. Check names are now normalised before comparison and matched against either `getName()` or `getDisplayName()`. A flag arriving during a probe that does not match is now logged in debug mode, so a future name change can't fail silently again
+
+## [2.2.1] - 2026-07-31
+
+### Fixed
+
+- Upgrading a plain diamond hoe in a smithing table producing a netherite Sickle instead of a netherite hoe. The netherite Sickle was a `SmithingTransformRecipe` whose base ingredient was a `MaterialChoice` of `DIAMOND_HOE`, and recipe ingredients match on material alone, so it matched every diamond hoe and shadowed the vanilla upgrade. The upgrade is now applied by restamping the result of the vanilla diamond-to-netherite upgrade, and only when the item that went in was actually a Sickle. As a result the upgrade now also preserves enchantments and durability, which the old recipe discarded
+
+- Players being kicked by the Vulcan anticheat for Fast Place while using the Builder's Wand, and for Fast Break while using the Excavation Shovel, Vein Miner, Lumberjack's Axe, or Sickle. OakTools asks protection plugins for permission by firing a throwaway `BlockPlaceEvent`/`BlockBreakEvent` per candidate block, and Vulcan's Fast Place / Fast Break checks simply count those events — one wand click probes up to `tools.wand.max-blocks` positions, so a few clicks per second cleared Vulcan's 128-per-second threshold and punished the player for blocks they never placed. Those two flags are now cancelled while OakTools is probing, via a new soft-dependency Vulcan integration. Configurable under `integration.vulcan`; requires `enable-api: true` in Vulcan's own config (the default)
+
 ## [2.2.0] - 2026-07-22
 
 ### Added

@@ -23,6 +23,9 @@ dependencies:
     OakOverflow:
       load: BEFORE
       required: false
+    Vulcan:
+      load: BEFORE
+      required: false
 permissions:
   oaktools.*:
     description: 'All OakTools permissions'

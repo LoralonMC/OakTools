@@ -108,6 +108,10 @@ public class ConfigManager {
     private boolean cachedLogWandPlacements = true;
     private boolean cachedLogHarvestingBreaks = true;
 
+    // Vulcan integration
+    private boolean cachedVulcanIntegrationEnabled = true;
+    private long cachedVulcanProbeGraceMillis = 60000L;
+
     // Configurable excluded blocks for File tool
     private Set<Material> cachedExcludedFileMaterials = EnumSet.noneOf(Material.class);
 
@@ -256,6 +260,10 @@ public class ConfigManager {
         cachedLogTrowelPlacements = config.getBoolean("integration.coreprotect.log-trowel-placements", true);
         cachedLogWandPlacements = config.getBoolean("integration.coreprotect.log-wand-placements", true);
         cachedLogHarvestingBreaks = config.getBoolean("integration.coreprotect.log-harvesting-breaks", true);
+
+        // Vulcan integration
+        cachedVulcanIntegrationEnabled = config.getBoolean("integration.vulcan.enabled", true);
+        cachedVulcanProbeGraceMillis = Math.max(0, config.getInt("integration.vulcan.probe-grace-millis", 60000));
 
         // Harvesting tool settings
         cachedExcavatorEnabled = config.getBoolean("tools.excavator.enabled", true);
@@ -563,6 +571,14 @@ public class ConfigManager {
 
     public boolean isLogWandPlacements() {
         return cachedLogWandPlacements;
+    }
+
+    public boolean isVulcanIntegrationEnabled() {
+        return cachedVulcanIntegrationEnabled;
+    }
+
+    public long getVulcanProbeGraceMillis() {
+        return cachedVulcanProbeGraceMillis;
     }
 
     public int getRepairAmount(ToolType toolType) {

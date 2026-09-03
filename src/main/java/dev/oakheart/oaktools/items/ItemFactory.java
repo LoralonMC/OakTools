@@ -93,8 +93,21 @@ public class ItemFactory {
     public ItemStack createSickle(String tier) {
         Material baseMaterial = plugin.getConfigManager().getSickleBaseMaterial(tier);
         ItemStack item = new ItemStack(baseMaterial);
+        applySickleIdentity(item, tier);
+        return item;
+    }
+
+    /**
+     * Stamps sickle identity (tool type, tier, name, model) onto an existing
+     * stack, leaving everything else untouched.
+     *
+     * <p>Used by the smithing upgrade, which starts from the item vanilla
+     * produced so the player keeps their enchantments and durability instead of
+     * receiving a freshly built sickle.
+     */
+    public void applySickleIdentity(ItemStack item, String tier) {
         ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
+        if (meta == null) return;
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(Constants.TOOL_TYPE, PersistentDataType.STRING, ToolType.SICKLE.name());
@@ -111,8 +124,6 @@ public class ItemFactory {
         if (modelId != null && !modelId.isEmpty()) {
             plugin.getModelProviderManager().applyModel(item, modelId);
         }
-
-        return item;
     }
 
     public String getToolTier(ItemStack item) {

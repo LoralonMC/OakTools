@@ -6,6 +6,7 @@ import dev.oakheart.oaktools.commands.OakToolsCommand;
 import dev.oakheart.oaktools.config.ConfigManager;
 import dev.oakheart.oaktools.integration.CoreProtectLogger;
 import dev.oakheart.oaktools.integration.OverflowHook;
+import dev.oakheart.oaktools.integration.VulcanHook;
 import dev.oakheart.oaktools.items.ItemFactory;
 import dev.oakheart.oaktools.listeners.*;
 import dev.oakheart.oaktools.managers.BreakingAnimationManager;
@@ -51,6 +52,7 @@ public final class OakTools extends JavaPlugin {
     // Integration
     private CoreProtectLogger coreProtectLogger;
     private OverflowHook overflowHook;
+    private VulcanHook vulcanHook;
 
     @Override
     public void onEnable() {
@@ -115,11 +117,14 @@ public final class OakTools extends JavaPlugin {
         coreProtectLogger = new CoreProtectLogger(this);
         coreProtectLogger.initialize();
 
+        vulcanHook = new VulcanHook(this);
+        vulcanHook.initialize();
     }
 
     private void registerListeners() {
         var pluginManager = getServer().getPluginManager();
 
+        pluginManager.registerEvents(protectionService, this);
         pluginManager.registerEvents(new FileListener(this), this);
         pluginManager.registerEvents(new TrowelListener(this), this);
         pluginManager.registerEvents(new WandListener(this, wandHistoryManager), this);
@@ -139,6 +144,7 @@ public final class OakTools extends JavaPlugin {
         pluginManager.registerEvents(placedBlockTracker, this);
         pluginManager.registerEvents(new EnchantBlockListener(this), this);
         pluginManager.registerEvents(new SickleListener(this), this);
+        pluginManager.registerEvents(new SmithingListener(this), this);
         pluginManager.registerEvents(new ItemDamageListener(this), this);
     }
 
@@ -200,6 +206,7 @@ public final class OakTools extends JavaPlugin {
         logModelConfiguration();
         coreProtectLogger.initialize();
         overflowHook.initialize();
+        vulcanHook.initialize();
         if (recipeDiscoveryListener != null) {
             recipeDiscoveryListener.rebuildCache();
         }
@@ -286,6 +293,10 @@ public final class OakTools extends JavaPlugin {
 
     public OverflowHook getOverflowHook() {
         return overflowHook;
+    }
+
+    public VulcanHook getVulcanHook() {
+        return vulcanHook;
     }
 
 

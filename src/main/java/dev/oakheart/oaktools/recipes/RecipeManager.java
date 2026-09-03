@@ -9,7 +9,6 @@ import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.SmithingTransformRecipe;
 
 import java.util.List;
 import java.util.Map;
@@ -87,9 +86,11 @@ public class RecipeManager {
         ConfigManager config = plugin.getConfigManager().getConfig();
 
         for (String tier : plugin.getConfigManager().getSickleTiers()) {
-            // Netherite uses smithing table, not crafting
+            // Netherite is a smithing-table upgrade, handled by SmithingListener.
+            // It can't be a SmithingTransformRecipe: the base ingredient would
+            // have to be a MaterialChoice of DIAMOND_HOE, which also matches a
+            // plain vanilla diamond hoe and would turn it into a sickle.
             if (tier.equalsIgnoreCase("netherite")) {
-                registerNetheriteSickleRecipe();
                 continue;
             }
 
@@ -122,25 +123,6 @@ public class RecipeManager {
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to register sickle recipe for " + tier + ": " + e.getMessage());
             }
-        }
-    }
-
-    private void registerNetheriteSickleRecipe() {
-        NamespacedKey key = new NamespacedKey(plugin, "sickle_netherite_recipe");
-        ItemStack result = plugin.getItemFactory().createSickle("netherite");
-
-        SmithingTransformRecipe recipe = new SmithingTransformRecipe(
-                key, result,
-                new RecipeChoice.MaterialChoice(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
-                new RecipeChoice.MaterialChoice(Material.DIAMOND_HOE),
-                new RecipeChoice.MaterialChoice(Material.NETHERITE_INGOT)
-        );
-
-        try {
-            plugin.getServer().addRecipe(recipe);
-            plugin.getLogger().info("Registered smithing recipe for netherite sickle");
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to register netherite sickle recipe: " + e.getMessage());
         }
     }
 

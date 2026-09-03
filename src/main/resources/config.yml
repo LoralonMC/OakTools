@@ -674,6 +674,20 @@ integration:
     log-trowel-placements: true
     log-wand-placements: true
     log-harvesting-breaks: true
+  # OakTools asks protection plugins for permission by firing a throwaway
+  # BlockPlaceEvent/BlockBreakEvent per candidate block. Vulcan's Fast Place and
+  # Fast Break checks count those events, so a single wand click can look like
+  # dozens of placements and get players kicked for blocks they never placed.
+  # This cancels those two flags, and only while OakTools is probing.
+  vulcan:
+    enabled: true
+    # How long a burst of probes can still excuse one such flag, in
+    # milliseconds. Vulcan counts these checks in one-second buckets but only
+    # closes a bucket on the next block event, which can land well after the
+    # player stopped using the tool — hence the generous default. A burst
+    # excuses at most one flag; real detections outside the window are
+    # unaffected.
+    probe-grace-millis: 60000
 
 # ============================================================
 # METRICS (bStats)
