@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-09-11
+
+### Fixed
+
+- Only operators could craft the patina tool. `oaktools.use.patina` was declared but `oaktools.craft.patina` was not, and `CraftingListener` derives that node from the tool type, so an undeclared node defaulted to op-only. Exactly the failure its own comment warns about for `vein_miner`. Adding a tool needs **both** nodes.
+
 ## [2.3.0] - 2026-09-11
 
 ### Added

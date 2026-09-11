@@ -39,6 +39,7 @@ permissions:
       oaktools.use.trowel: true
       oaktools.use.wand: true
       oaktools.craft.file: true
+      oaktools.craft.patina: true
       oaktools.craft.trowel: true
       oaktools.craft.wand: true
       oaktools.use.excavator: true
@@ -75,6 +76,9 @@ permissions:
     default: true
   oaktools.craft.file:
     description: 'Craft the File tool'
+    default: true
+  oaktools.craft.patina:
+    description: 'Craft the copper weathering tool'
     default: true
   oaktools.craft.trowel:
     description: 'Craft the Trowel tool'
