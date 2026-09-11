@@ -52,9 +52,23 @@ public class RecipeManager {
         }
 
         List<String> shapeList = config.getStringList(recipePath + ".shape");
-        if (shapeList.size() != 3) {
-            plugin.getLogger().warning("Invalid recipe shape for " + toolName + " (must be 3 rows)");
+        // Bukkit allows 1-3 rows; requiring exactly 3 ruled out legitimate shapes
+        // such as the two-row vessel used by bowls, buckets and flower pots.
+        if (shapeList.isEmpty() || shapeList.size() > 3) {
+            plugin.getLogger().warning("Invalid recipe shape for " + toolName + " (must be 1-3 rows)");
             return;
+        }
+        int width = shapeList.get(0).length();
+        if (width < 1 || width > 3) {
+            plugin.getLogger().warning("Invalid recipe shape for " + toolName + " (rows must be 1-3 wide)");
+            return;
+        }
+        for (String row : shapeList) {
+            if (row.length() != width) {
+                plugin.getLogger().warning("Invalid recipe shape for " + toolName
+                        + " (all rows must be the same width)");
+                return;
+            }
         }
 
         String[] shape = shapeList.toArray(new String[0]);

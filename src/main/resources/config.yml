@@ -706,13 +706,14 @@ tools:
     recipe:
       enabled: true
       category: EQUIPMENT
+      # Vanilla's vessel shape — the one bowls, buckets, flower pots and glass
+      # bottles all share. Copper is the one material it is not already used
+      # with (there is no copper bucket), so it is free and reads as a can.
       shape:
+        - "C C"
         - " C "
-        - " C "
-        - " S "
       ingredients:
         C: COPPER_INGOT
-        S: STICK
 
 # ============================================================
 # INTEGRATION SETTINGS
