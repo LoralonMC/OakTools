@@ -144,6 +144,7 @@ public final class OakTools extends JavaPlugin {
         pluginManager.registerEvents(placedBlockTracker, this);
         pluginManager.registerEvents(new EnchantBlockListener(this), this);
         pluginManager.registerEvents(new SickleListener(this), this);
+        pluginManager.registerEvents(new PatinaListener(this), this);
         pluginManager.registerEvents(new SmithingListener(this), this);
         pluginManager.registerEvents(new ItemDamageListener(this), this);
     }

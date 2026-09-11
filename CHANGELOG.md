@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-09-11
+
+### Added
+
+- **Patina tool** (`tools.patina`, shipped as the Verdigris Can): right-click copper to weather it forward one stage. Vanilla offers no way to advance copper except waiting on random ticks — only scraping backward with an axe is instant — so this covers the missing direction. One block per click, to sit alongside the File as a precision tool.
+  - Waxed copper is never affected. Waxing is how a player locks a stage; advancing it would defeat the only lock they have.
+  - Covers all 13 copper families including doors, trapdoors, chests, bars, chains, lanterns, grates, bulbs and golem statues: 42 transitions in total. Stages are **derived from block names** rather than listed, so copper blocks added by future Minecraft versions work with no code or config change. The one exception is handled explicitly: the plain block is `COPPER_BLOCK` but its stages are `EXPOSED_COPPER` and friends.
+  - Block state is carried across the change, so a stair keeps its shape, a slab its half and a door its hinge.
+  - Configurable particle effect (`tools.patina.effect`: particle, count, spread; `NONE` to disable).
+  - Respects claims via the existing protection service and logs to CoreProtect.
+
+### Changed
+
+- `DisplayService.updateDisplay` now refreshes the styled name and the item model, not just the lore. Previously an item kept whatever name and model it was stamped with when crafted, so renaming or re-skinning a tool in config only affected newly crafted ones and left older copies permanently inconsistent. Tools already in inventories now catch up on next use.
+  - Safe against player renames: an anvil writes `customName()`, a separate field which displays over the `itemName()` this plugin sets.
+  - An empty `model-id` is left alone rather than cleared, so a tool shipped without a model keeps its base material's look until one is configured.
+
 ## [2.2.2] - 2026-08-01
 
 ### Fixed

@@ -48,6 +48,7 @@ permissions:
       oaktools.craft.lumberjack: true
       oaktools.craft.veinminer: true
       oaktools.use.sickle: true
+      oaktools.use.patina: true
       oaktools.craft.sickle: true
       oaktools.repair.anvil: true
       oaktools.bypass.protection: true
@@ -65,6 +66,9 @@ permissions:
     default: op
   oaktools.use.file:
     description: 'Use the File tool'
+    default: true
+  oaktools.use.patina:
+    description: 'Use the copper weathering tool'
     default: true
   oaktools.use.trowel:
     description: 'Use the Trowel tool'

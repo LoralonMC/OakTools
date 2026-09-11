@@ -91,6 +91,10 @@ public class ConfigManager {
 
     // Sickle settings
     private boolean cachedSickleEnabled = true;
+    private boolean cachedPatinaEnabled = true;
+    private org.bukkit.Particle cachedPatinaParticle = null;
+    private int cachedPatinaParticleCount = 8;
+    private double cachedPatinaParticleSpread = 0.3D;
     private boolean cachedSickleReplantFromInventory = true;
     private boolean cachedSicklePreventTilling = true;
     private boolean cachedSickleProtectImmatureCrops = true;
@@ -301,6 +305,22 @@ public class ConfigManager {
 
         // Sickle tiers
         cachedSickleEnabled = config.getBoolean("tools.sickle.enabled", true);
+
+        cachedPatinaEnabled = config.getBoolean("tools.patina.enabled", true);
+        cachedPatinaParticleCount = Math.max(0, config.getInt("tools.patina.effect.count", 8));
+        cachedPatinaParticleSpread = Math.max(0.0D, config.getDouble("tools.patina.effect.spread", 0.3D));
+        String patinaParticle = config.getString("tools.patina.effect.particle", "SPLASH");
+        if (patinaParticle == null || patinaParticle.isBlank() || patinaParticle.equalsIgnoreCase("NONE")) {
+            cachedPatinaParticle = null;
+        } else {
+            try {
+                cachedPatinaParticle = org.bukkit.Particle.valueOf(patinaParticle.toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                logger.warning("Invalid particle for the patina tool: " + patinaParticle
+                        + " (use a Bukkit Particle name, or NONE). Falling back to no particle.");
+                cachedPatinaParticle = null;
+            }
+        }
         cachedSickleReplantFromInventory = config.getBoolean("tools.sickle.replant-from-inventory", true);
         cachedSicklePreventTilling = config.getBoolean("tools.sickle.prevent-tilling", true);
         cachedSickleProtectImmatureCrops = config.getBoolean("tools.sickle.protect-immature-crops", true);
@@ -739,6 +759,23 @@ public class ConfigManager {
     }
 
     // Sickle getters
+
+    public boolean isPatinaEnabled() {
+        return cachedPatinaEnabled;
+    }
+
+    /** Particle shown when copper weathers, or null for none. */
+    public org.bukkit.Particle getPatinaParticle() {
+        return cachedPatinaParticle;
+    }
+
+    public int getPatinaParticleCount() {
+        return cachedPatinaParticleCount;
+    }
+
+    public double getPatinaParticleSpread() {
+        return cachedPatinaParticleSpread;
+    }
 
     public boolean isSickleEnabled() {
         return cachedSickleEnabled;

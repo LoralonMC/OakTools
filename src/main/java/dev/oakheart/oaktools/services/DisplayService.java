@@ -66,9 +66,33 @@ public class DisplayService {
             return;
         }
 
+        // Refresh the styled name as well as the lore, so a tool renamed or
+        // re-skinned in config is caught up by items already in circulation
+        // instead of keeping whatever they were stamped with when crafted.
+        // Safe against player renames: an anvil writes customName(), a different
+        // field which displays over itemName().
+        updateDisplayName(item, meta, toolType);
         updateLore(item, meta, toolType);
 
         item.setItemMeta(meta);
+
+        refreshModel(item, toolType);
+    }
+
+    /**
+     * Re-applies the configured item model.
+     *
+     * <p>Runs after {@code setItemMeta} because model providers operate on the
+     * stack. An empty {@code model-id} is left alone rather than cleared: a tool
+     * shipped without a model yet should keep the vanilla look.
+     */
+    private void refreshModel(ItemStack item, ToolType toolType) {
+        String modelId = plugin.getConfigManager().getConfig()
+                .getString("tools." + toolType.getConfigKey() + ".model-id", "");
+        if (modelId == null || modelId.isEmpty()) {
+            return;
+        }
+        plugin.getModelProviderManager().applyModel(item, modelId);
     }
 
     private void updateDisplayName(ItemStack item, ItemMeta meta, ToolType toolType) {

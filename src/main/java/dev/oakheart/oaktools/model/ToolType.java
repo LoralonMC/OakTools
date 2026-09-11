@@ -10,7 +10,13 @@ public enum ToolType {
     EXCAVATOR("Excavation Shovel", "excavator"),
     LUMBERJACK("Lumberjack's Axe", "lumberjack"),
     VEIN_MINER("Vein Miner Pickaxe", "vein-miner"),
-    SICKLE("Sickle", "sickle");
+    SICKLE("Sickle", "sickle"),
+    /**
+     * Weathers copper forward a stage. The internal name is deliberately neutral:
+     * it is written into every crafted item's PDC, so it must outlive any change
+     * to the tool's display name.
+     */
+    PATINA("Patina", "patina");
 
     private final String displayName;
     private final String configKey;
