@@ -1,14 +1,21 @@
 package dev.oakheart.oaktools.listeners;
 
 import dev.oakheart.oaktools.OakTools;
+import org.bukkit.NamespacedKey;
+import org.bukkit.block.Crafter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftingListener implements Listener {
+
+    /** Vanilla's built-in "two damaged items make one" recipe, which has no ingredient list. */
+    private static final NamespacedKey REPAIR_RECIPE = NamespacedKey.minecraft("repair_item");
 
     private final OakTools plugin;
 
@@ -40,5 +47,42 @@ public class CraftingListener implements Listener {
                 plugin.getMessageManager().send(player, "craft-denied");
             }
         }
+    }
+
+    /**
+     * Blocks vanilla's repair recipe for tools. Two worn items of the same material in a crafting
+     * grid combine into a fresh <em>plain</em> item of that material, so two Files came out as a
+     * Warped Fungus on a Stick with the tool data gone. The anvil is the supported way to combine
+     * tools: {@link AnvilListener} merges their durability and keeps them tools.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPrepareRepair(PrepareItemCraftEvent event) {
+        if (!event.isRepair()) {
+            return;
+        }
+        if (containsTool(event.getInventory().getMatrix())) {
+            event.getInventory().setResult(null);
+        }
+    }
+
+    /** The same recipe through a crafter block, which never fires {@link PrepareItemCraftEvent}. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onCrafterRepair(CrafterCraftEvent event) {
+        if (!REPAIR_RECIPE.equals(event.getRecipe().getKey())) {
+            return;
+        }
+        if (event.getBlock().getState(false) instanceof Crafter crafter
+                && containsTool(crafter.getInventory().getContents())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean containsTool(ItemStack[] items) {
+        for (ItemStack item : items) {
+            if (item != null && plugin.getItemFactory().isTool(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

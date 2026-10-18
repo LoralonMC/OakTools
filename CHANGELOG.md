@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-10-18
+
+### Fixed
+
+- Two worn tools of the same kind combined in a crafting grid into a plain item of the base material, losing the tool. Two Files came out as a Warped Fungus on a Stick: vanilla's repair recipe (`minecraft:repair_item`) matches on material alone and ignores the tool data. The recipe is now blocked for tools in crafting tables, the player's 2x2 grid and crafter blocks. Combining at an anvil is unchanged and is the supported way to merge durability.
+
 ## [2.3.1] - 2026-09-11
 
 ### Fixed
