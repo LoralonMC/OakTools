@@ -117,10 +117,17 @@ public class ConfigValidator {
                 continue;
             }
 
-            // Validate shape
+            // Validate shape. Same rule as RecipeManager: 1-3 rows, all the same width. This
+            // demanded exactly 3 rows after RecipeManager was relaxed in 2.3.0, so the two-row
+            // patina recipe failed validation and every /oaktools reload was refused.
             List<String> shape = config.getStringList(path + ".shape");
-            if (shape.size() != 3) {
-                warnings.add(path + ".shape must have exactly 3 rows. Found: " + shape.size());
+            if (shape.isEmpty() || shape.size() > 3) {
+                warnings.add(path + ".shape must have 1-3 rows. Found: " + shape.size());
+                valid = false;
+                continue;
+            }
+            if (shape.stream().anyMatch(row -> row.length() != shape.get(0).length())) {
+                warnings.add(path + ".shape rows must all be the same width");
                 valid = false;
                 continue;
             }

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-10-18
+
+### Fixed
+
+- `/oaktools reload` was refused ("Config validation failed. Keeping old cached values.") and
+  every start logged "Configuration has fatal errors". The config validator still required recipe
+  shapes to have exactly 3 rows after 2.3.0 allowed 1-3, so the two-row patina recipe failed it.
+  The validator now applies the same rule as recipe registration: 1-3 rows of equal width. The
+  recipe itself always registered; only validation and reload were affected.
+
 ## [2.3.2] - 2026-10-18
 
 ### Fixed
