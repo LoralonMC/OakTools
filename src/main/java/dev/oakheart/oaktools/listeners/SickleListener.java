@@ -183,14 +183,13 @@ public class SickleListener implements Listener {
 
             harvestedCount++;
 
-            // Announce radius crops so downstream systems (quest objectives) can
-            // credit them. The clicked crop is skipped - its pre-cancel
-            // BlockBreakEvent already accounts for it, so firing here too would
-            // double count.
-            if (!crop.equals(brokenBlock)) {
-                Bukkit.getPluginManager().callEvent(
-                        new dev.oakheart.oaktools.events.SickleHarvestEvent(player, crop, cropType));
-            }
+            // Announce every harvested crop, the clicked one included, so
+            // downstream systems (quest objectives) can credit them. The clicked
+            // crop's BlockBreakEvent was cancelled above, and listeners that
+            // honour cancellation (OakQuests credits only breaks that went
+            // through) would otherwise count each swing one crop short.
+            Bukkit.getPluginManager().callEvent(
+                    new dev.oakheart.oaktools.events.SickleHarvestEvent(player, crop, cropType));
 
             if (damageToolAndCheckBreak(item, player, unbreakingLevel)) break;
         }

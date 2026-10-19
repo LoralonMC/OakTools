@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.4] - 2026-10-19
+
+### Fixed
+
+- Sickle harvests credited quest objectives one crop short per swing, and a single-crop or sneak
+  harvest credited nothing. The Sickle cancels the clicked crop's break event to harvest and
+  replant it itself, and announced only the radius crops via `SickleHarvestEvent`, relying on the
+  cancelled break event to cover the clicked one. OakQuests ignores cancelled breaks, so that crop
+  was never counted. `SickleHarvestEvent` now fires for the clicked crop too.
+
 ## [2.3.3] - 2026-10-18
 
 ### Fixed

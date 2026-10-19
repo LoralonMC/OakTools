@@ -14,8 +14,10 @@ import org.jetbrains.annotations.NotNull;
  * cancellable - so downstream systems (e.g. quest objectives) can credit a
  * sickle sweep the same as a hand harvest.
  *
- * NOT fired for the initially clicked crop: that one already fires a normal
- * (pre-cancel) BlockBreakEvent, so re-announcing it here would double count.
+ * Also fired for the initially clicked crop. The Sickle cancels that crop's
+ * BlockBreakEvent and harvests/replants it itself, so a listener that ignores
+ * cancelled breaks would otherwise never credit it. Count this event, not the
+ * cancelled BlockBreakEvent, or the clicked crop is counted twice.
  */
 public class SickleHarvestEvent extends PlayerEvent {
 
