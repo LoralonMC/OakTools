@@ -2,6 +2,7 @@ package dev.oakheart.oaktools.util;
 
 import org.bukkit.Axis;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.*;
@@ -514,7 +515,12 @@ public class BlockUtil {
     }
 
     public static boolean isInteractiveBlock(Block block) {
-        return switch (block.getType()) {
+        Material type = block.getType();
+        // Tags rather than names, so new wood types and the straw bed are included.
+        if (Tag.BEDS.isTagged(type) || Tag.BUTTONS.isTagged(type)) {
+            return true;
+        }
+        return switch (type) {
             case CRAFTING_TABLE,
                  STONECUTTER,
                  LOOM,
@@ -524,16 +530,9 @@ public class BlockUtil {
                  ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL,
                  ENCHANTING_TABLE,
                  ENDER_CHEST,
-                 WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
-                 LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
-                 PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED,
                  LEVER,
                  REPEATER,
                  COMPARATOR,
-                 OAK_BUTTON, SPRUCE_BUTTON, BIRCH_BUTTON, JUNGLE_BUTTON,
-                 ACACIA_BUTTON, DARK_OAK_BUTTON, MANGROVE_BUTTON, CHERRY_BUTTON,
-                 BAMBOO_BUTTON, CRIMSON_BUTTON, WARPED_BUTTON,
-                 STONE_BUTTON, POLISHED_BLACKSTONE_BUTTON,
                  NOTE_BLOCK,
                  DRAGON_EGG,
                  RESPAWN_ANCHOR,

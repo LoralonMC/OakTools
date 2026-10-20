@@ -7,9 +7,11 @@ import dev.oakheart.oaktools.model.WandMode;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import dev.oakheart.oaktools.util.PreviewColor;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.enchantments.Enchantment;
 
 import java.io.IOException;
@@ -19,6 +21,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -363,6 +366,18 @@ public class ConfigManager {
         Set<Material> excluded = EnumSet.noneOf(Material.class);
         List<String> excludedList = config.getStringList("tools.file.excluded-blocks");
         for (String materialName : excludedList) {
+            // '#namespace:tag' takes every block in a vanilla block tag, so new wood types
+            // (pale oak, poplar) are covered without listing each door and button.
+            if (materialName.startsWith("#")) {
+                NamespacedKey key = NamespacedKey.fromString(materialName.substring(1).toLowerCase(Locale.ROOT));
+                Tag<Material> tag = key == null ? null : Bukkit.getTag(Tag.REGISTRY_BLOCKS, key, Material.class);
+                if (tag == null) {
+                    logger.warning("Unknown block tag in tools.file.excluded-blocks: " + materialName);
+                } else {
+                    excluded.addAll(tag.getValues());
+                }
+                continue;
+            }
             try {
                 excluded.add(Material.valueOf(materialName));
             } catch (IllegalArgumentException e) {

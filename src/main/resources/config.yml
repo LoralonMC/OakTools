@@ -77,6 +77,7 @@ tools:
     # Retracted pistons can still be rotated normally.
     protect-extended-pistons: true
     # Blocks the File tool will not interact with (right-click passes through)
+    # Entries starting with '#' are vanilla block tags (quote them), e.g. '#minecraft:doors'.
     excluded-blocks:
       # Torches
       - TORCH
@@ -86,59 +87,11 @@ tools:
       - REDSTONE_TORCH
       - REDSTONE_WALL_TORCH
       # Doors
-      - OAK_DOOR
-      - SPRUCE_DOOR
-      - BIRCH_DOOR
-      - JUNGLE_DOOR
-      - ACACIA_DOOR
-      - DARK_OAK_DOOR
-      - MANGROVE_DOOR
-      - CHERRY_DOOR
-      - BAMBOO_DOOR
-      - CRIMSON_DOOR
-      - WARPED_DOOR
-      - IRON_DOOR
-      - COPPER_DOOR
-      - EXPOSED_COPPER_DOOR
-      - WEATHERED_COPPER_DOOR
-      - OXIDIZED_COPPER_DOOR
-      - WAXED_COPPER_DOOR
-      - WAXED_EXPOSED_COPPER_DOOR
-      - WAXED_WEATHERED_COPPER_DOOR
-      - WAXED_OXIDIZED_COPPER_DOOR
+      - '#minecraft:doors'
       # Trapdoors
-      - OAK_TRAPDOOR
-      - SPRUCE_TRAPDOOR
-      - BIRCH_TRAPDOOR
-      - JUNGLE_TRAPDOOR
-      - ACACIA_TRAPDOOR
-      - DARK_OAK_TRAPDOOR
-      - MANGROVE_TRAPDOOR
-      - CHERRY_TRAPDOOR
-      - BAMBOO_TRAPDOOR
-      - CRIMSON_TRAPDOOR
-      - WARPED_TRAPDOOR
-      - IRON_TRAPDOOR
-      - COPPER_TRAPDOOR
-      - EXPOSED_COPPER_TRAPDOOR
-      - WEATHERED_COPPER_TRAPDOOR
-      - OXIDIZED_COPPER_TRAPDOOR
-      - WAXED_COPPER_TRAPDOOR
-      - WAXED_EXPOSED_COPPER_TRAPDOOR
-      - WAXED_WEATHERED_COPPER_TRAPDOOR
-      - WAXED_OXIDIZED_COPPER_TRAPDOOR
+      - '#minecraft:trapdoors'
       # Fence gates
-      - OAK_FENCE_GATE
-      - SPRUCE_FENCE_GATE
-      - BIRCH_FENCE_GATE
-      - JUNGLE_FENCE_GATE
-      - ACACIA_FENCE_GATE
-      - DARK_OAK_FENCE_GATE
-      - MANGROVE_FENCE_GATE
-      - CHERRY_FENCE_GATE
-      - BAMBOO_FENCE_GATE
-      - CRIMSON_FENCE_GATE
-      - WARPED_FENCE_GATE
+      - '#minecraft:fence_gates'
       # Vines
       - VINE
       - CAVE_VINES
@@ -177,52 +130,11 @@ tools:
       - DEAD_HORN_CORAL_FAN
       - DEAD_HORN_CORAL_WALL_FAN
       # Buttons
-      - OAK_BUTTON
-      - SPRUCE_BUTTON
-      - BIRCH_BUTTON
-      - JUNGLE_BUTTON
-      - ACACIA_BUTTON
-      - DARK_OAK_BUTTON
-      - MANGROVE_BUTTON
-      - CHERRY_BUTTON
-      - BAMBOO_BUTTON
-      - CRIMSON_BUTTON
-      - WARPED_BUTTON
-      - STONE_BUTTON
-      - POLISHED_BLACKSTONE_BUTTON
+      - '#minecraft:buttons'
       # Pressure plates
-      - OAK_PRESSURE_PLATE
-      - SPRUCE_PRESSURE_PLATE
-      - BIRCH_PRESSURE_PLATE
-      - JUNGLE_PRESSURE_PLATE
-      - ACACIA_PRESSURE_PLATE
-      - DARK_OAK_PRESSURE_PLATE
-      - MANGROVE_PRESSURE_PLATE
-      - CHERRY_PRESSURE_PLATE
-      - BAMBOO_PRESSURE_PLATE
-      - CRIMSON_PRESSURE_PLATE
-      - WARPED_PRESSURE_PLATE
-      - STONE_PRESSURE_PLATE
-      - POLISHED_BLACKSTONE_PRESSURE_PLATE
-      - HEAVY_WEIGHTED_PRESSURE_PLATE
-      - LIGHT_WEIGHTED_PRESSURE_PLATE
+      - '#minecraft:pressure_plates'
       # Beds
-      - WHITE_BED
-      - ORANGE_BED
-      - MAGENTA_BED
-      - LIGHT_BLUE_BED
-      - YELLOW_BED
-      - LIME_BED
-      - PINK_BED
-      - GRAY_BED
-      - LIGHT_GRAY_BED
-      - CYAN_BED
-      - PURPLE_BED
-      - BLUE_BED
-      - BROWN_BED
-      - GREEN_BED
-      - RED_BED
-      - BLACK_BED
+      - '#minecraft:beds'
       # Interactive / special blocks
       - LEVER
       - TRIPWIRE_HOOK
@@ -251,37 +163,15 @@ tools:
       - TURTLE_EGG
       - SNIFFER_EGG
       - FROGSPAWN
-      - CAULDRON
-      - WATER_CAULDRON
-      - LAVA_CAULDRON
-      - POWDER_SNOW_CAULDRON
+      - '#minecraft:cauldrons'
       - CAKE
       # Candle cakes
-      - CANDLE_CAKE
-      - WHITE_CANDLE_CAKE
-      - ORANGE_CANDLE_CAKE
-      - MAGENTA_CANDLE_CAKE
-      - LIGHT_BLUE_CANDLE_CAKE
-      - YELLOW_CANDLE_CAKE
-      - LIME_CANDLE_CAKE
-      - PINK_CANDLE_CAKE
-      - GRAY_CANDLE_CAKE
-      - LIGHT_GRAY_CANDLE_CAKE
-      - CYAN_CANDLE_CAKE
-      - PURPLE_CANDLE_CAKE
-      - BLUE_CANDLE_CAKE
-      - BROWN_CANDLE_CAKE
-      - GREEN_CANDLE_CAKE
-      - RED_CANDLE_CAKE
-      - BLACK_CANDLE_CAKE
+      - '#minecraft:candle_cakes'
       # Redstone / rails
       - COMPOSTER
       - REPEATER
       - COMPARATOR
-      - RAIL
-      - POWERED_RAIL
-      - DETECTOR_RAIL
-      - ACTIVATOR_RAIL
+      - '#minecraft:rails'
 
   trowel:
     enabled: true

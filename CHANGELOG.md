@@ -9,9 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.4.0] - 2026-10-20
 
+### Added
+
+- `tools.file.excluded-blocks` accepts vanilla block tags: an entry such as `'#minecraft:doors'` (quoted) excludes every block in the tag.
+
 ### Changed
 
 - Targets Paper 26.3 (`api-version: '26.3'`, built against paper-api 26.3). This build no longer loads on 26.1.2.
+- The Wand and Trowel recognise beds and buttons by tag, so the straw bed and pale oak and poplar buttons count as interactive.
+- The default `tools.file.excluded-blocks` uses block tags for doors, trapdoors, fence gates, buttons, pressure plates, beds, candle cakes, cauldrons and rails, so the File also leaves pale oak and poplar blocks and the straw bed alone. Existing configs keep their own list; switch it to the tag form by hand.
 
 ## [2.3.4] - 2026-10-19
 
