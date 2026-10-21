@@ -574,10 +574,9 @@ tools:
       lore:
         - "<#6C757D>ᴅᴜʀᴀʙɪʟɪᴛʏ: <#f2ebd7><remaining>/<max>"
     base-material: WARPED_FUNGUS_ON_A_STICK
-    # No model yet — the item uses its base material's look until a texture is
-    # commissioned. Setting this later updates tools already in player
-    # inventories: the display refresh re-applies the model on next use.
-    model-id: ""
+    # Changing the model updates cans already in player inventories: the
+    # display refresh re-applies it on next use.
+    model-id: "nexo:verdigris_can"
     durability:
       max: 250
       use-vanilla-damage-bar: true
