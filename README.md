@@ -64,6 +64,7 @@ A tiered crop-harvesting tool (wooden through netherite) built on the vanilla ho
 - **Harvest-only** — won't break immature crops, and won't till soil into farmland (both configurable)
 - Supports wheat, carrots, potatoes, beetroot, nether wart, cocoa, sweet berries, torchflower, and pitcher crops
 - Also clears grass, ferns, and flowers in the same radius
+- **ExecutableItems tiers** — a tier can name an EI item (`executable-item:`) instead of being built by OakTools, so gear forged elsewhere (e.g. a Smith-made Reforged or Hardened Sickle) harvests with that tier's radius while keeping its own name, enchantments and durability. An Unbreakable item takes no damage
 
 ### Shared Features
 - Custom durability system with configurable max durability per tool (sickles use vanilla durability)
@@ -101,7 +102,7 @@ A tiered crop-harvesting tool (wooden through netherite) built on the vanilla ho
 | `/oaktools info [player]` | View held tool information | `oaktools.info` |
 | `/oaktools repair [player]` | Repair held tool to full durability | `oaktools.repair` |
 
-Tool names for `/oaktools give`: `file`, `trowel`, `wand`, `excavator`, `lumberjack`, `vein_miner`, and `sickle_<tier>` (e.g. `sickle_iron`).
+Tool names for `/oaktools give`: `file`, `trowel`, `wand`, `excavator`, `lumberjack`, `vein_miner`, and `sickle_<tier>` (e.g. `sickle_iron`). Tiers backed by an ExecutableItems item are given with `/ei give` instead.
 
 Aliases: `/otools`, `/ot`
 
@@ -137,7 +138,7 @@ Key settings in `config.yml`:
 
 - **Tool sections** (`tools.file`, `tools.trowel`, `tools.wand`, `tools.excavator`, `tools.lumberjack`, `tools.vein-miner`, `tools.sickle`) — Enable/disable, base material, model ID, durability, enchantments, recipe, display name/lore
 - **Harvesting tools** — Grid size (excavator), max blocks and minimum leaves (lumberjack), max blocks and deepslate grouping (vein miner), break animation speed and progress messages
-- **Sickle** — Per-tier harvest radius and recipe, replant-from-inventory fallback, tilling prevention, immature-crop protection, clearable vegetation list
+- **Sickle** — Per-tier harvest radius and recipe (or an `executable-item` the tier recognises), replant-from-inventory fallback, tilling prevention, immature-crop protection, clearable vegetation list
 - **General restrictions** — Gamemode behavior (allow use, consume blocks/durability), world whitelist/blacklist
 - **Integration** — CoreProtect logging toggles per tool
 - **Messages** — All player-facing messages in `messages.yml`, MiniMessage format with configurable delivery (chat, action bar)

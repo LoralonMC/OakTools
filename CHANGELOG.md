@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-24
+
+### Added
+
+- Sickle tiers can be backed by an ExecutableItems item: `tools.sickle.tiers.<tier>.executable-item: <ei-id>`. OakTools recognises that item as a sickle of the tier and harvests with its radius; the item's own name, model, enchantments and durability are kept. Such tiers have no recipe and are not offered by `/oaktools give`, which points at `/ei give` instead.
+- Default `reforged` (`reforged_sickle`) and `hardened` (`hardened_sickle`) tiers, both radius 5, for the Smith's sickles.
+
+### Fixed
+
+- An Unbreakable sickle still lost durability on every crop. The sickle applies its own damage, which bypassed vanilla's Unbreakable check.
+- `/oaktools repair` on a sickle left its damage untouched and renamed it to "Sickle", clearing its lore. It now resets the vanilla damage and leaves the item otherwise alone.
+
 ## [2.4.0] - 2026-10-20
 
 ### Added

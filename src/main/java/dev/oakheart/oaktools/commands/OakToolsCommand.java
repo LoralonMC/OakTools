@@ -18,6 +18,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -58,6 +59,8 @@ public class OakToolsCommand {
                                             }
                                             // Add sickle tier suggestions
                                             for (String tier : plugin.getConfigManager().getSickleTiers()) {
+                                                // EI-backed tiers are given with /ei give
+                                                if (plugin.getConfigManager().getSickleExecutableItem(tier) != null) continue;
                                                 String name = "sickle_" + tier;
                                                 if (name.startsWith(input)) {
                                                     builder.suggest(name);
@@ -126,6 +129,14 @@ public class OakToolsCommand {
             String tier = toolArg.substring("sickle_".length());
             if (!plugin.getConfigManager().getSickleTiers().contains(tier)) {
                 plugin.getMessageManager().sendCommand(sender, "give.invalid-tool");
+                return Command.SINGLE_SUCCESS;
+            }
+            String executableItem = plugin.getConfigManager().getSickleExecutableItem(tier);
+            if (executableItem != null) {
+                plugin.getMessageManager().sendCommand(sender, "give.executable-item-tier",
+                        Placeholder.unparsed("tier", tier),
+                        Placeholder.unparsed("item", executableItem),
+                        Placeholder.unparsed("player", target.getName()));
                 return Command.SINGLE_SUCCESS;
             }
 
@@ -273,8 +284,17 @@ public class OakToolsCommand {
             return Command.SINGLE_SUCCESS;
         }
 
-        plugin.getDurabilityService().repairFully(item);
-        plugin.getDisplayService().updateDisplay(item);
+        if (plugin.getItemFactory().getToolType(item) == ToolType.SICKLE) {
+            // Sickles run on vanilla durability and carry no OakTools display, so the PDC
+            // repair and display refresh below would leave the damage and rename the item.
+            if (item.getItemMeta() instanceof Damageable damageable) {
+                damageable.setDamage(0);
+                item.setItemMeta(damageable);
+            }
+        } else {
+            plugin.getDurabilityService().repairFully(item);
+            plugin.getDisplayService().updateDisplay(item);
+        }
 
         plugin.getMessageManager().sendCommand(sender, "repair.success-sender",
                 Placeholder.unparsed("player", target.getName()));

@@ -7,6 +7,7 @@
 #   <remaining> - Remaining uses   <max> - Max durability
 #   <count> - Number of items/blocks  <total> - Total blocks in operation
 #   <wand_mode> - Wand mode name
+#   <tier> - Sickle tier          <item> - ExecutableItems id
 # Set text to "" or command message to "" to disable individual messages
 
 # ============================================================
@@ -115,6 +116,7 @@ commands:
     player-not-found: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Player not found: <#FCD472><player>"
     invalid-tool: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Invalid tool type. Valid types: file, trowel, wand, excavator, lumberjack, vein-miner"
     invalid-durability: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Invalid durability value: <#FCD472><value>"
+    executable-item-tier: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>The <#FCD472><tier><#C27B6B> sickle is an ExecutableItems item. Use <#FCD472>/ei give <player> <item>"
     success-sender: "<#6C757D>[<#6B7A5E>ᴛᴏᴏʟꜱ<#6C757D>] <#f2ebd7>Gave <#FCD472><tool><#f2ebd7> to <#FCD472><player><#f2ebd7>."
     success-target: "<#6C757D>[<#6B7A5E>ᴛᴏᴏʟꜱ<#6C757D>] <#8FAA87>You received a <#FCD472><tool><#8FAA87>!"
   info:

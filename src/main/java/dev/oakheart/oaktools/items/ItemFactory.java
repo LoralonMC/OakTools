@@ -83,7 +83,20 @@ public class ItemFactory {
             return false;
         }
 
-        return meta.getPersistentDataContainer().has(Constants.TOOL_TYPE, PersistentDataType.STRING);
+        return meta.getPersistentDataContainer().has(Constants.TOOL_TYPE, PersistentDataType.STRING)
+                || executableItemSickleTier(meta) != null;
+    }
+
+    /**
+     * The sickle tier of an ExecutableItems item mapped to one in config, or null.
+     *
+     * <p>The Reforged and Hardened Sickles are forged by the Smith as ExecutableItems items, so
+     * they never carry OakTools' own PDC stamp. Recognising them by their EI id means a copy from
+     * any source (forge, crate, {@code /ei give}) harvests the same way.
+     */
+    private String executableItemSickleTier(ItemMeta meta) {
+        String id = meta.getPersistentDataContainer().get(Constants.EXECUTABLE_ITEMS_ID, PersistentDataType.STRING);
+        return plugin.getConfigManager().getSickleTierForExecutableItem(id);
     }
 
     /**
@@ -130,7 +143,8 @@ public class ItemFactory {
         if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return null;
-        return meta.getPersistentDataContainer().get(Constants.TOOL_TIER, PersistentDataType.STRING);
+        String tier = meta.getPersistentDataContainer().get(Constants.TOOL_TIER, PersistentDataType.STRING);
+        return tier != null ? tier : executableItemSickleTier(meta);
     }
 
     public ToolType getToolType(ItemStack item) {
@@ -144,6 +158,10 @@ public class ItemFactory {
         }
 
         String typeString = meta.getPersistentDataContainer().get(Constants.TOOL_TYPE, PersistentDataType.STRING);
+        if (typeString == null) {
+            // isTool passed without the stamp, so this is an EI-backed sickle tier
+            return ToolType.SICKLE;
+        }
         return ToolType.fromString(typeString);
     }
 

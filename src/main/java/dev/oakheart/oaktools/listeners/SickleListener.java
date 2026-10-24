@@ -254,14 +254,16 @@ public class SickleListener implements Listener {
     // ===== Shared durability handling =====
 
     /**
-     * Applies one durability damage (respecting Unbreaking) and breaks the tool if depleted.
-     * Returns true if the tool broke (caller should stop processing).
+     * Applies one durability damage (respecting Unbreaking and the Unbreakable flag) and breaks
+     * the tool if depleted. Returns true if the tool broke (caller should stop processing).
      */
     private boolean damageToolAndCheckBreak(ItemStack item, Player player, int unbreakingLevel) {
-        if (!shouldConsumeDurability(unbreakingLevel)) return false;
-
         ItemMeta meta = item.getItemMeta();
         if (!(meta instanceof Damageable damageable)) return false;
+        // Damage is applied by hand here, so vanilla's own Unbreakable check never runs.
+        if (meta.isUnbreakable()) return false;
+
+        if (!shouldConsumeDurability(unbreakingLevel)) return false;
 
         int newDamage = damageable.getDamage() + 1;
         if (newDamage >= item.getType().getMaxDurability()) {

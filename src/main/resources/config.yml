@@ -551,6 +551,17 @@ tools:
         display-name: "Netherite Sickle"
         model-id: "nexo:netherite_sickle"
         radius: 4
+      # Tiers forged by the Smith as ExecutableItems items. OakTools never builds
+      # these (no recipe, not offered by /oaktools give): it recognises the EI item
+      # by its id and harvests with the tier's radius. Name, model, enchantments
+      # and durability all come from the EI item, so marking it Unbreakable there
+      # makes the sickle take no damage.
+      reforged:
+        executable-item: reforged_sickle
+        radius: 5
+      hardened:
+        executable-item: hardened_sickle
+        radius: 5
 
   # ----------------------------------------------------------
   # Patina tool — weathers copper forward one stage per click.

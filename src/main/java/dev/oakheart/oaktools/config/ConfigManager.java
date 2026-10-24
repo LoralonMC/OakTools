@@ -105,6 +105,8 @@ public class ConfigManager {
     private Map<String, Material> cachedSickleBaseMaterial = new HashMap<>();
     private Map<String, String> cachedSickleDisplayName = new HashMap<>();
     private Map<String, String> cachedSickleModelId = new HashMap<>();
+    private Map<String, String> cachedSickleExecutableItem = new HashMap<>();
+    private Map<String, String> cachedSickleTierByExecutableItem = new HashMap<>();
     private Set<String> cachedSickleTiers = new HashSet<>();
     private Set<Material> cachedSickleClearableVegetation = EnumSet.noneOf(Material.class);
 
@@ -331,6 +333,8 @@ public class ConfigManager {
         Map<String, Material> sickleMats = new HashMap<>();
         Map<String, String> sickleNames = new HashMap<>();
         Map<String, String> sickleModels = new HashMap<>();
+        Map<String, String> sickleExecutableItems = new HashMap<>();
+        Map<String, String> sickleTiersByExecutableItem = new HashMap<>();
         Set<String> sickleTierSet = new HashSet<>();
         var tiersSection = config.getSection("tools.sickle.tiers");
         if (tiersSection != null) {
@@ -341,6 +345,16 @@ public class ConfigManager {
                         "<white>" + capitalize(tier) + " Sickle</white>"));
                 sickleModels.put(tier, tiersSection.getString(tier + ".model-id", ""));
 
+                String executableItem = tiersSection.getString(tier + ".executable-item", "");
+                if (executableItem != null && !executableItem.isBlank()) {
+                    sickleExecutableItems.put(tier, executableItem);
+                    String previous = sickleTiersByExecutableItem.put(executableItem, tier);
+                    if (previous != null) {
+                        logger.warning("Sickle tiers '" + previous + "' and '" + tier
+                                + "' both use executable item '" + executableItem + "'; '" + tier + "' wins.");
+                    }
+                }
+
                 // Derive base material from tier name if not explicitly set
                 Material baseMat = deriveSickleBaseMaterial(tier);
                 sickleMats.put(tier, baseMat);
@@ -350,6 +364,8 @@ public class ConfigManager {
         cachedSickleBaseMaterial = sickleMats;
         cachedSickleDisplayName = sickleNames;
         cachedSickleModelId = sickleModels;
+        cachedSickleExecutableItem = sickleExecutableItems;
+        cachedSickleTierByExecutableItem = sickleTiersByExecutableItem;
         cachedSickleTiers = sickleTierSet;
 
         Set<Material> clearableVeg = EnumSet.noneOf(Material.class);
@@ -826,6 +842,19 @@ public class ConfigManager {
 
     public String getSickleModelId(String tier) {
         return cachedSickleModelId.getOrDefault(tier, "");
+    }
+
+    /**
+     * The ExecutableItems id that carries this tier, or null for a tier OakTools builds itself.
+     * Such a tier is made elsewhere (the Smith forges it) and OakTools only recognises it.
+     */
+    public String getSickleExecutableItem(String tier) {
+        return cachedSickleExecutableItem.get(tier);
+    }
+
+    /** The sickle tier an ExecutableItems id stands for, or null if it is not a sickle. */
+    public String getSickleTierForExecutableItem(String executableItemId) {
+        return executableItemId == null ? null : cachedSickleTierByExecutableItem.get(executableItemId);
     }
 
     private static Material deriveSickleBaseMaterial(String tier) {
